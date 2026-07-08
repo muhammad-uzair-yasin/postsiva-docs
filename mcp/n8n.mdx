@@ -3,12 +3,13 @@ title: Postsiva MCP in n8n
 description: Connect n8n to Postsiva via MCP AI Agent or direct REST HTTP Request nodes.
 ---
 
-n8n can drive Postsiva in two ways:
+n8n can drive Postsiva in three ways:
 
-1. **MCP AI Agent** — natural-language tool selection (best for flexible workflows)
-2. **REST HTTP Request** — deterministic calls to specific endpoints (best for CRON and pipelines)
+1. **Community nodes** — `n8n-nodes-postsiva` package with 43 dedicated nodes (recommended for most workflows)
+2. **MCP AI Agent** — natural-language tool selection (best for flexible AI workflows)
+3. **REST HTTP Request** — deterministic calls to specific endpoints (best for custom or uncovered endpoints)
 
-Both use the same workspace API key and Pro plan requirements.
+All use the same workspace API key and Pro plan requirements.
 
 ---
 
@@ -21,7 +22,15 @@ Both use the same workspace API key and Pro plan requirements.
 
 ---
 
-## Option A — MCP AI Agent
+## Option A — Community nodes (recommended)
+
+Install **`n8n-nodes-postsiva`** from **Settings → Community nodes** for 43 ready-made nodes: posting, scheduling, drafts, inbox, AI generation, AI Watcher, and brand persona.
+
+See the full guide: [n8n integration](/integrations/n8n).
+
+---
+
+## Option B — MCP AI Agent
 
 Use when the workflow should **decide** which Postsiva action to take based on incoming data or chat input.
 
@@ -75,7 +84,7 @@ flowchart LR
 
 ---
 
-## Option B — REST HTTP Request
+## Option C — REST HTTP Request
 
 Use for **fixed** pipelines where you know the exact endpoint.
 
@@ -134,15 +143,16 @@ Store `$json` in Google Sheets, Airtable, or your data warehouse.
 
 ---
 
-## MCP vs REST in n8n
+## Community nodes vs MCP vs REST
 
-| | MCP AI Agent | HTTP Request |
-|---|--------------|--------------|
-| Setup | MCP server + agent prompt | Per-endpoint nodes |
-| Flexibility | High — agent picks tools | Low — fixed paths |
-| Cost | Agent + tool AI credits | Endpoint AI credits only |
-| Debugging | Tool call logs in agent trace | Per-node output |
-| Best for | Chatbots, variable instructions | CRON, ETL, strict SLAs |
+| | Community nodes | MCP AI Agent | HTTP Request |
+|---|-----------------|--------------|--------------|
+| Setup | Install `n8n-nodes-postsiva` + credential | MCP server + agent prompt | Per-endpoint nodes |
+| Coverage | 43 Postsiva actions | Full MCP tool catalog | Any REST path |
+| Flexibility | Medium — pick node + fields | High — agent picks tools | Low — fixed paths |
+| Best for | Scheduled posts, inbox, watcher | Chatbots, variable instructions | Custom / debug endpoints |
+
+See [n8n integration](/integrations/n8n) for community node workflows.
 
 ---
 
@@ -179,16 +189,20 @@ Enable **Continue On Fail** on HTTP nodes only when downstream logic handles par
   <Step title="RSS Read">
     Trigger on new blog post URL
   </Step>
-  <Step title="HTTP — idea_to_content via REST">
-    `POST /unified/content/generate` with `idea` = post title + summary, `platforms` = `["linkedin","threads"]`
+  <Step title="AI Generate Post from Idea">
+    Postsiva node with `idea` = post title + summary, `platforms` = linkedin, threads
   </Step>
-  <Step title="HTTP — publish scheduled">
-    `POST /unified/post/text` with `scheduled_time` = next business day 09:00 UTC
+  <Step title="Create Scheduled Post">
+    Postsiva node with caption from AI output and `scheduled_time` = next business day 09:00 UTC
   </Step>
   <Step title="Notify">
     Send confirmation email or Slack message with scheduled time
   </Step>
 </Steps>
+
+<Note>
+  Same flow works with HTTP Request nodes — see [REST AI content](/apis/ai-content) and [n8n HTTP fallback](/integrations/n8n#http-request-fallback).
+</Note>
 
 ---
 
@@ -201,6 +215,7 @@ Enable **Continue On Fail** on HTTP nodes only when downstream logic handles par
 ## Next
 
 <CardGroup cols={2}>
+  <Card title="Community nodes" href="/integrations/n8n">Install n8n-nodes-postsiva</Card>
   <Card title="Cursor guide" href="/mcp/cursor">MCP in Cursor</Card>
   <Card title="REST AI content" href="/apis/ai-content">Generate endpoints</Card>
   <Card title="Authentication" href="/authentication">Scopes and headers</Card>

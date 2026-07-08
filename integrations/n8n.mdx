@@ -1,166 +1,266 @@
 ---
 title: n8n Integration
-description: Automate Postsiva with n8n HTTP Request nodes — API key headers, common workflows, and examples.
+description: Official Postsiva community nodes for n8n — 43 nodes for posting, scheduling, inbox, AI, and AI Watcher. Plus HTTP Request and MCP alternatives.
 ---
 
-Use [n8n](https://n8n.io) HTTP Request nodes to connect Postsiva to CRMs, spreadsheets, RSS feeds, and scheduled jobs.
+Automate Postsiva with the official **`n8n-nodes-postsiva`** community package — no manual HTTP wiring for standard workflows.
 
-## Prerequisites
+<Info>
+  Requires **Pro** plan with `api_keys_enabled`. AI generation nodes also need **Workspace ID** in the credential.
+</Info>
 
-- Postsiva **Pro** plan with API key
-- n8n instance (cloud or self-hosted)
-- Workspace with connected social accounts
+## Three ways to integrate
 
-## Authentication setup
+| Approach | Best for |
+|----------|----------|
+| **[Community nodes](#install-community-nodes)** (recommended) | Visual workflows — post, schedule, inbox, AI, watcher |
+| **[HTTP Request](#http-request-fallback)** | Custom endpoints, one-off experiments |
+| **[MCP AI Agent](/mcp/n8n)** | Natural-language tool selection in AI workflows |
 
-Create credentials once, reuse across nodes:
+---
 
-| Setting | Value |
-|---------|-------|
-| Authentication | **Header Auth** (or Generic Credential) |
-| Header name | `X-API-Key` |
-| Header value | `psk_live_YOUR_KEY` |
+## Install community nodes
 
-Also set `Content-Type: application/json` on POST nodes.
+### n8n Cloud or self-hosted UI
+
+1. Open **Settings → Community nodes → Install**
+2. Enter package name: `n8n-nodes-postsiva`
+3. Confirm install and restart n8n if prompted
+
+### Verify install
+
+Search the node palette for **Postsiva**. You should see 43 nodes grouped by area (Posting, Account, Media, etc.).
+
+<Note>
+  Package: [npm `n8n-nodes-postsiva`](https://www.npmjs.com/package/n8n-nodes-postsiva) · Source: `postsiva/n8n-nodes-postsiva` on GitHub
+</Note>
+
+---
+
+## Credentials
+
+Create a **Postsiva API** credential once and reuse across all Postsiva nodes.
+
+| Field | Required | Value |
+|-------|----------|-------|
+| API Key | Yes | `psk_live_…` from workspace **Settings → API Keys** |
+| Base URL | No | `https://backend.postsiva.com` (default) |
+| Workspace ID | AI nodes only | Workspace UUID — used as `workspace_id` on AI generate endpoints |
 
 <Warning>
-  Never embed API keys in workflow JSON you share publicly. Use n8n credentials store.
+  Never embed API keys in workflow JSON you share publicly. Use n8n's credential store.
 </Warning>
 
-## Base configuration
+Test the credential — it calls `GET /unified/oauth/token` to verify the key.
 
-| Field | Value |
-|-------|-------|
-| Method | `GET`, `POST`, `PATCH`, or `DELETE` |
-| URL | `https://backend.postsiva.com/{path}` |
-| Send Headers | ✓ |
-| Send Body | ✓ (for POST/PATCH) |
+---
 
-## Workflow 1: RSS → LinkedIn post
+## Node catalog (43)
+
+### Posting (9)
+
+Per-platform nodes with **Post Type** selector (`text` · `image` · `video` · `carousel`). Unsupported types are hidden per platform.
+
+| Node | Notes |
+|------|-------|
+| Post to LinkedIn (Personal) | Visibility: Public / Connections |
+| Post to LinkedIn Page | Page picker (from user profile) |
+| Post to Facebook Page | Page picker (required) |
+| Post to Instagram | Text, image, carousel |
+| Post to Threads | Caption max 500 chars |
+| Post to TikTok | Title, privacy level |
+| Post to YouTube | Video only — title required |
+| Post to Pinterest | Board picker (required) |
+| Post to Bluesky | Caption max 300 chars; carousel max 4 images |
+
+**Shared posting fields:** Caption, media source (URL · Postsiva media ID · binary), schedule, save as draft.
+
+| Post type | API path (under the hood) |
+|-----------|---------------------------|
+| Text | `POST /unified/post/text` |
+| Image | `POST /unified/post/image` |
+| Video | `POST /unified/post/video` |
+| Carousel | `POST /unified/post/carousel` |
+
+Page and board dropdowns load from **Get User Profile** (`GET /unified/user-profiles/`).
+
+### Account (4)
+
+| Node | Description |
+|------|-------------|
+| Get User Profile | Profiles, LinkedIn orgs, FB pages, Pinterest boards |
+| Get Connection Status | Which platforms are connected |
+| Connect Account | OAuth URL (open in browser) or Bluesky handle + app password |
+| Disconnect Account | Remove a platform connection |
+
+### Media (3)
+
+| Node | Description |
+|------|-------------|
+| Upload Media | Binary file or public URL → returns `media_id` |
+| List Media Library | Paginated library list |
+| Delete Media | Remove by `media_id` |
+
+### Scheduled queue (4)
+
+| Node | Description |
+|------|-------------|
+| Get Scheduled Posts | Filter by status, platform |
+| Create Scheduled Post | Schedule-only create (`scheduled_time` required) |
+| Publish Scheduled Post Now | Publish queue item immediately |
+| Cancel Scheduled Post | Delete / cancel scheduled item |
+
+### Drafts (3)
+
+| Node | Description |
+|------|-------------|
+| Get Drafts | List workspace drafts |
+| Publish Draft | Publish draft now |
+| Schedule Draft | Move draft to schedule queue |
+
+### Content (2)
+
+| Node | Description |
+|------|-------------|
+| Get Posts | Published posts across platforms |
+| Get Single Post | One post by ID + platform |
+
+### Inbox & analytics (5)
+
+| Node | Description |
+|------|-------------|
+| Get Comments | Inbox view — recent posts per platform |
+| Get Comments by Post | Comments for one `post_id` |
+| Get Comment Replies | Thread replies for a `comment_id` |
+| Reply to Comment | Post a reply |
+| Get Insights | Analytics / insights |
+
+Requires **Inbox** plan feature for comment nodes.
+
+### AI generation (4) — does not publish
+
+Set **Workspace ID** in the credential. Consumes AI credits.
+
+| Node | Description |
+|------|-------------|
+| AI Generate Post from Idea | Idea → platform-specific copy |
+| AI Generate Image | Caption → images |
+| AI Image to Post | Image URL → post copy |
+| AI Video to Post | Video URL → post copy |
+
+Chain output into a **Post to …** node when ready to publish. See [AI Content API](/apis/ai-content).
+
+### AI Watcher (7)
+
+| Node | Description |
+|------|-------------|
+| Enable AI Watcher | Watch comments on a post |
+| Disable AI Watcher | Stop watching |
+| Get Enabled AI Watchers | List watched posts |
+| Update AI Watcher Rules | Lead keywords + custom rule |
+| Get Leads | Detected leads |
+| Get AI Watcher History | Run history |
+| Force Run AI Watcher | Run all enabled or one post |
+
+See [AI Watcher API](/apis/ai-watcher).
+
+### Brand persona (2)
+
+| Node | Description |
+|------|-------------|
+| Get Brand Persona | Read workspace persona |
+| Update Brand Persona | Tone, audience, avoid list |
+
+---
+
+## Example workflows (community nodes)
+
+### Workflow 1: RSS → LinkedIn post
 
 ```
 Schedule Trigger (daily)
   → RSS Read
   → Function (format caption, truncate to 3000)
-  → HTTP Request POST /unified/post/text
+  → Post to LinkedIn (Personal)  [postType: text]
 ```
 
-**HTTP Request node:**
-
-```json
-{
-  "platforms": ["linkedin"],
-  "default_text": "{{ $json.formattedCaption }}"
-}
-```
-
-URL: `https://backend.postsiva.com/unified/post/text`
-
-## Workflow 2: Google Sheet → scheduled posts
+### Workflow 2: Google Sheet → scheduled posts
 
 ```
 Google Sheets Trigger (new row)
-  → Set (map columns: text, scheduled_time, platforms)
-  → HTTP Request POST /unified/post/text
+  → Set (map: text, scheduled_time, platform)
+  → Create Scheduled Post
 ```
 
-Row columns example:
+Map columns to node fields: **Caption**, **Scheduled Time**, **Platform**, **Post Type**.
 
-| text | scheduled_time | platforms |
-|------|----------------|-----------|
-| Launch day! | 2026-07-15T09:00:00Z | linkedin,threads |
-
-Body:
-
-```json
-{
-  "platforms": {{ $json.platforms.split(',') }},
-  "default_text": "{{ $json.text }}",
-  "scheduled_time": "{{ $json.scheduled_time }}"
-}
-```
-
-## Workflow 3: Upload image then post
-
-Two HTTP Request nodes in sequence:
-
-**Node 1 — Upload**
-
-| Setting | Value |
-|---------|-------|
-| Method | POST |
-| URL | `https://backend.postsiva.com/media/upload` |
-| Body type | Form-Data |
-| Field | `file` → binary from previous node |
-
-**Node 2 — Post**
-
-```json
-{
-  "platforms": ["instagram", "facebook"],
-  "default_text": "{{ $('Set').item.json.caption }}",
-  "default_image_id": "{{ $json.media_id }}",
-  "facebook": {
-    "facebook_page_ids": ["YOUR_PAGE_ID"]
-  }
-}
-```
-
-## Workflow 4: Poll scheduled queue
+### Workflow 3: Upload image then post to Instagram
 
 ```
-Schedule Trigger (every 15 min)
-  → HTTP Request GET /unified/scheduled-posts?status=scheduled
-  → IF (failed count > 0)
-  → Send Email / Slack alert
+HTTP Request / Webhook (binary image)
+  → Upload Media  [mediaType: image, source: binary]
+  → Post to Instagram  [postType: image, mediaSource: mediaId, mediaId: {{ $json.media_id }}]
 ```
 
-URL: `https://backend.postsiva.com/unified/scheduled-posts?status=failed&limit=10`
-
-## Workflow 5: Connect Bluesky
+### Workflow 4: AI idea → draft → review → publish
 
 ```
 Manual Trigger
-  → HTTP Request POST /unified/oauth/url
+  → AI Generate Post from Idea  [platforms: linkedin]
+  → Post to LinkedIn (Personal)  [draft: true, caption: {{ $json.linkedin_text }}]
+  → (human review in Postsiva app)
+  → Publish Draft  [draftId: …]
 ```
 
-Body:
-
-```json
-{
-  "platform": ["bluesky"],
-  "handle": "{{ $json.handle }}",
-  "app_password": "{{ $json.app_password }}"
-}
-```
-
-Store handle/password in n8n credentials — not in plain workflow fields.
-
-## MCP alternative
-
-n8n also supports MCP clients. For AI-driven workflows, connect to Postsiva MCP:
+### Workflow 5: Poll failed scheduled posts
 
 ```
-URL: https://mcp.postsiva.com/mcp
-Header: X-API-Key: psk_live_YOUR_KEY
+Schedule Trigger (every 15 min)
+  → Get Scheduled Posts  [status: failed, limit: 10]
+  → IF (items.length > 0)
+  → Send Email / Slack alert
 ```
 
-See [Connect to MCP](/mcp/connect).
+### Workflow 6: Connect Bluesky
 
-## Error handling
+```
+Manual Trigger
+  → Connect Account  [platforms: bluesky, handle, appPassword]
+```
 
-Add an **Error Trigger** workflow or use `Continue On Fail` with a branch:
+Store Bluesky app password in n8n credentials — not in plain workflow fields.
 
-| HTTP code | Action |
-|-----------|--------|
-| 401 | Alert — rotate API key |
-| 403 | Check plan or key scope |
-| 422 | Log validation error, fix caption length |
-| 402 | Upgrade plan |
+### Workflow 7: Enable AI Watcher on new LinkedIn post
 
-See [HTTP errors](/errors/http) and [Postsiva errors](/errors/postsiva).
+```
+Post to LinkedIn (Personal)
+  → Enable AI Watcher  [postId: {{ $json.post_id }}, platform: linkedin]
+  → Update AI Watcher Rules  [leadKeywords: pricing, demo, buy]
+```
 
-## Useful endpoints
+---
+
+## HTTP Request fallback
+
+Use raw **HTTP Request** nodes when you need endpoints not covered by a community node, or for debugging.
+
+### Authentication
+
+| Setting | Value |
+|---------|-------|
+| Authentication | Header Auth |
+| Header name | `X-API-Key` |
+| Header value | `psk_live_YOUR_KEY` |
+
+Set `Content-Type: application/json` on POST/PATCH nodes.
+
+### Base URL
+
+```
+https://backend.postsiva.com
+```
+
+### Quick reference
 
 | Task | Method | Path |
 |------|--------|------|
@@ -174,9 +274,47 @@ See [HTTP errors](/errors/http) and [Postsiva errors](/errors/postsiva).
 | Drafts | GET | `/unified/drafts` |
 | Analytics | GET | `/unified/analytics` |
 
+Full API reference: [REST overview](/apis/overview). Copy-paste examples: [cURL recipes](/integrations/curl).
+
+---
+
+## MCP alternative
+
+For AI-driven workflows where the agent picks tools dynamically, connect Postsiva MCP:
+
+| Field | Value |
+|-------|-------|
+| URL | `https://mcp.postsiva.com/mcp` |
+| Header | `X-API-Key: psk_live_YOUR_KEY` |
+
+See [Postsiva MCP in n8n](/mcp/n8n) and [Connect to MCP](/mcp/connect).
+
+<Note>
+  **Agent Chat** (`POST /workspace-agent/website/chat`) is not included in community nodes — use the web app, WhatsApp agent, or MCP for conversational flows.
+</Note>
+
+---
+
+## Error handling
+
+All Postsiva nodes support **Continue On Fail**. Add an Error Trigger workflow for global alerts.
+
+| HTTP code | Action |
+|-----------|--------|
+| 401 | Rotate or fix API key |
+| 403 | Check plan, key scope, or feature flag |
+| 422 | Validation — caption length, missing page ID, etc. |
+| 402 | Upgrade plan |
+
+See [HTTP errors](/errors/http) and [Postsiva errors](/errors/postsiva).
+
+---
+
 ## Related
 
 <CardGroup cols={2}>
   <Card title="Integrations overview" href="/integrations/overview">All integration options</Card>
-  <Card title="cURL recipes" href="/integrations/curl">Copy-paste examples</Card>
+  <Card title="REST API" href="/apis/overview">Full endpoint reference</Card>
+  <Card title="MCP in n8n" href="/mcp/n8n">AI Agent + MCP setup</Card>
+  <Card title="cURL recipes" href="/integrations/curl">Copy-paste HTTP examples</Card>
 </CardGroup>

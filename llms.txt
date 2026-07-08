@@ -56,7 +56,7 @@
 - Complete setup, media guidelines, character limits, scheduling, drafts
 
 ## Integrations
-- Overview, n8n, Zapier, Make, cURL, Claude Desktop, Chrome extension, WhatsApp
+- Overview, n8n (community nodes `n8n-nodes-postsiva`, 43 nodes), Zapier, Make, cURL, Claude Desktop, Chrome extension, WhatsApp
 
 ## Errors & reference
 - HTTP codes, Postsiva errors, plans, IDs and scopes

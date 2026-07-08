@@ -11,7 +11,7 @@ Postsiva is built for automation. Every feature available in the web app is acce
 |--------|----------|------|
 | [REST API](/apis/overview) | Custom apps, scripts, backends | `X-API-Key: psk_live_…` |
 | [cURL recipes](/integrations/curl) | Quick tests, CI, shell scripts | Same API key header |
-| [n8n](/integrations/n8n) | Visual workflows, webhooks, cron | HTTP Request node + API key |
+| [n8n](/integrations/n8n) | Visual workflows, webhooks, cron | **Community nodes** (`n8n-nodes-postsiva`) or HTTP Request |
 | [Zapier](/integrations/zapier) | No-code automations | Webhooks + Code steps |
 | [Make.com](/integrations/make) | Scenarios with HTTP modules | API key header |
 | [Unified MCP](/mcp/overview) | AI agents (Cursor, Claude) | API key header or query param |
@@ -74,7 +74,7 @@ API keys may hit rate limits under heavy use. Response includes rate limit detai
 
 <CardGroup cols={2}>
   <Card title="n8n" icon="diagram-project" href="/integrations/n8n">
-    REST nodes with API key headers — ideal for scheduled workflows.
+    Official community nodes (43) — posting, schedule, inbox, AI, watcher.
   </Card>
   <Card title="Zapier" icon="bolt" href="/integrations/zapier">
     Webhooks + Code steps pattern for no-code automations.
