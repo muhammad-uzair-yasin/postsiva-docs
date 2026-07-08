@@ -4,10 +4,11 @@
 
 ## How to Get Started with Postsiva
 
-1. [Complete setup flow](/guides/complete-setup.md) — UI steps + programmatic OAuth + API key automation
-2. [Quickstart](/quickstart.md)
-3. [Features overview](/features/overview.md) — full product map
-4. [Posting parameters](/apis/posting-parameters.md) — all platform fields
+1. Sign up or log in at [postsiva.com](https://postsiva.com)
+2. Create a workspace
+3. Connect accounts (Settings → Integrations)
+4. Create API key (Settings → API Keys) — use all REST APIs
+5. [Quickstart](/quickstart.md) or [Complete setup](/guides/complete-setup.md)
 
 ## Get started
 - [Introduction](/introduction.md): Unified API + MCP overview
