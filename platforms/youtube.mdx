@@ -1,0 +1,125 @@
+---
+title: YouTube
+description: Upload videos to YouTube — title is required; use youtube_title and youtube_description fields.
+---
+
+YouTube supports **video uploads only** through Postsiva. Every upload requires a **title**; description and playlist assignment are optional.
+
+## Connect
+
+```bash
+curl -X POST "https://backend.postsiva.com/unified/oauth/url" \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: psk_live_YOUR_KEY" \
+  -d '{"platform": ["youtube"]}'
+```
+
+One YouTube channel per workspace.
+
+## Post video
+
+```bash
+curl -X POST "https://backend.postsiva.com/unified/post/video" \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: psk_live_YOUR_KEY" \
+  -d '{
+    "platforms": ["youtube"],
+    "default_text": "Fallback if youtube_title omitted.",
+    "video_id": "your-video-media-uuid",
+    "youtube": {
+      "youtube_title": "How We Built Our API in 30 Days",
+      "youtube_description": "Full walkthrough of our social posting stack.\n\nTimestamps:\n0:00 Intro\n2:30 Architecture"
+    }
+  }'
+```
+
+## Required: title
+
+YouTube rejects uploads without a title. Provide it via:
+
+| Field | Priority |
+|-------|----------|
+| `youtube.youtube_title` | Preferred — YouTube-specific title |
+| `default_text` | Fallback title if `youtube_title` omitted |
+
+If neither is set, the API returns an error:
+
+```json
+{
+  "message": "YouTube requires a title. Set default_text or youtube.youtube_title."
+}
+```
+
+## Text limits
+
+| Field | Limit |
+|-------|-------|
+| Title (`youtube_title` / `default_text`) | 100 characters (validated) |
+| Description (`youtube_description`) | 5,000 characters |
+
+See [Character limits](/guides/character-limits).
+
+## Optional fields
+
+| Field | Description |
+|-------|-------------|
+| `youtube_description` | Video description (supports newlines) |
+| `youtube_playlist_id` | Add video to playlist after upload |
+| `thumbnail_image_id` | Custom thumbnail (workspace media ID) |
+| `generate_thumbnail_from_content` | Auto-generate thumbnail from title/description |
+
+<Note>
+  Custom thumbnails work best for 16:9 long-form videos, not Shorts.
+</Note>
+
+## Upload workflow
+
+1. **Upload video** — `POST /media/upload` (chunked for files ≥ 10 MB)
+2. **Post** — `POST /unified/post/video` with `video_id` and title
+3. **Verify** — Check YouTube Studio or `GET /unified/posts?platforms=youtube`
+
+## Scheduling
+
+```json
+{
+  "platforms": ["youtube"],
+  "video_id": "media-uuid",
+  "youtube": {
+    "youtube_title": "Scheduled launch video",
+    "youtube_description": "Premieres at noon UTC."
+  },
+  "scheduled_time": "2026-08-01T12:00:00Z"
+}
+```
+
+## Multi-platform video
+
+Share one video to YouTube plus social platforms:
+
+```json
+{
+  "platforms": ["youtube", "linkedin", "facebook"],
+  "default_text": "Short social caption.",
+  "video_id": "shared-video-uuid",
+  "youtube": {
+    "youtube_title": "Full Tutorial: Getting Started",
+    "youtube_description": "Complete guide with chapters."
+  },
+  "linkedin": {
+    "linkedin_page_ids": ["108813535"],
+    "post_to_personal": true
+  },
+  "facebook": {
+    "facebook_page_ids": ["756356074224043"]
+  }
+}
+```
+
+## Common errors
+
+| Error | Cause | Fix |
+|-------|-------|-----|
+| `NOT_CONNECTED` | YouTube not linked | Complete OAuth |
+| Missing title | No `youtube_title` or `default_text` | Add title |
+| `422` title limit | Title over 100 characters | Shorten title |
+| `422` description | Over 5,000 characters | Shorten description |

@@ -1,0 +1,182 @@
+---
+title: n8n Integration
+description: Automate Postsiva with n8n HTTP Request nodes — API key headers, common workflows, and examples.
+---
+
+Use [n8n](https://n8n.io) HTTP Request nodes to connect Postsiva to CRMs, spreadsheets, RSS feeds, and scheduled jobs.
+
+## Prerequisites
+
+- Postsiva **Pro** plan with API key
+- n8n instance (cloud or self-hosted)
+- Workspace with connected social accounts
+
+## Authentication setup
+
+Create credentials once, reuse across nodes:
+
+| Setting | Value |
+|---------|-------|
+| Authentication | **Header Auth** (or Generic Credential) |
+| Header name | `X-API-Key` |
+| Header value | `psk_live_YOUR_KEY` |
+
+Also set `Content-Type: application/json` on POST nodes.
+
+<Warning>
+  Never embed API keys in workflow JSON you share publicly. Use n8n credentials store.
+</Warning>
+
+## Base configuration
+
+| Field | Value |
+|-------|-------|
+| Method | `GET`, `POST`, `PATCH`, or `DELETE` |
+| URL | `https://backend.postsiva.com/{path}` |
+| Send Headers | ✓ |
+| Send Body | ✓ (for POST/PATCH) |
+
+## Workflow 1: RSS → LinkedIn post
+
+```
+Schedule Trigger (daily)
+  → RSS Read
+  → Function (format caption, truncate to 3000)
+  → HTTP Request POST /unified/post/text
+```
+
+**HTTP Request node:**
+
+```json
+{
+  "platforms": ["linkedin"],
+  "default_text": "{{ $json.formattedCaption }}"
+}
+```
+
+URL: `https://backend.postsiva.com/unified/post/text`
+
+## Workflow 2: Google Sheet → scheduled posts
+
+```
+Google Sheets Trigger (new row)
+  → Set (map columns: text, scheduled_time, platforms)
+  → HTTP Request POST /unified/post/text
+```
+
+Row columns example:
+
+| text | scheduled_time | platforms |
+|------|----------------|-----------|
+| Launch day! | 2026-07-15T09:00:00Z | linkedin,threads |
+
+Body:
+
+```json
+{
+  "platforms": {{ $json.platforms.split(',') }},
+  "default_text": "{{ $json.text }}",
+  "scheduled_time": "{{ $json.scheduled_time }}"
+}
+```
+
+## Workflow 3: Upload image then post
+
+Two HTTP Request nodes in sequence:
+
+**Node 1 — Upload**
+
+| Setting | Value |
+|---------|-------|
+| Method | POST |
+| URL | `https://backend.postsiva.com/media/upload` |
+| Body type | Form-Data |
+| Field | `file` → binary from previous node |
+
+**Node 2 — Post**
+
+```json
+{
+  "platforms": ["instagram", "facebook"],
+  "default_text": "{{ $('Set').item.json.caption }}",
+  "default_image_id": "{{ $json.media_id }}",
+  "facebook": {
+    "facebook_page_ids": ["YOUR_PAGE_ID"]
+  }
+}
+```
+
+## Workflow 4: Poll scheduled queue
+
+```
+Schedule Trigger (every 15 min)
+  → HTTP Request GET /unified/scheduled-posts?status=scheduled
+  → IF (failed count > 0)
+  → Send Email / Slack alert
+```
+
+URL: `https://backend.postsiva.com/unified/scheduled-posts?status=failed&limit=10`
+
+## Workflow 5: Connect Bluesky
+
+```
+Manual Trigger
+  → HTTP Request POST /unified/oauth/url
+```
+
+Body:
+
+```json
+{
+  "platform": ["bluesky"],
+  "handle": "{{ $json.handle }}",
+  "app_password": "{{ $json.app_password }}"
+}
+```
+
+Store handle/password in n8n credentials — not in plain workflow fields.
+
+## MCP alternative
+
+n8n also supports MCP clients. For AI-driven workflows, connect to Postsiva MCP:
+
+```
+URL: https://mcp.postsiva.com/mcp
+Header: X-API-Key: psk_live_YOUR_KEY
+```
+
+See [Connect to MCP](/mcp/connect).
+
+## Error handling
+
+Add an **Error Trigger** workflow or use `Continue On Fail` with a branch:
+
+| HTTP code | Action |
+|-----------|--------|
+| 401 | Alert — rotate API key |
+| 403 | Check plan or key scope |
+| 422 | Log validation error, fix caption length |
+| 402 | Upgrade plan |
+
+See [HTTP errors](/errors/http) and [Postsiva errors](/errors/postsiva).
+
+## Useful endpoints
+
+| Task | Method | Path |
+|------|--------|------|
+| OAuth URL | POST | `/unified/oauth/url` |
+| Connection status | GET | `/unified/oauth/token` |
+| Post text | POST | `/unified/post/text` |
+| Post image | POST | `/unified/post/image` |
+| Upload media | POST | `/media/upload` |
+| List posts | GET | `/unified/posts` |
+| Scheduled queue | GET | `/unified/scheduled-posts` |
+| Drafts | GET | `/unified/drafts` |
+| Analytics | GET | `/unified/analytics` |
+
+## Related
+
+<CardGroup cols={2}>
+  <Card title="Integrations overview" href="/integrations/overview">All integration options</Card>
+  <Card title="cURL recipes" href="/integrations/curl">Copy-paste examples</Card>
+</CardGroup>

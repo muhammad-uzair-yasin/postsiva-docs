@@ -1,0 +1,101 @@
+---
+title: Platforms Overview
+description: Unified social networks, Snapchat OAuth, and WhatsApp agent.
+---
+
+Postsiva’s **unified** API and MCP cover **eight** publishing networks. **Snapchat** connects via unified OAuth. **WhatsApp** is an agent channel.
+
+## Unified publishing platforms
+
+| Platform | Connect | Text | Image | Carousel | Video | Notes |
+|----------|---------|------|-------|----------|-------|-------|
+| [LinkedIn](/platforms/linkedin) | OAuth | ✓ | ✓ | ✓ | ✓ | Personal profile + organization pages |
+| [Facebook](/platforms/facebook) | OAuth | ✓ | ✓ | ✓ | ✓ | Facebook Pages only (not personal profiles) |
+| [Instagram](/platforms/instagram) | OAuth | — | ✓ | ✓ | ✓ | Business/Creator account required |
+| [TikTok](/platforms/tiktok) | OAuth (Business) | — | ✓ | ✓ | ✓ | TikTok Business account |
+| [YouTube](/platforms/youtube) | OAuth | — | — | — | ✓ | Video uploads with title + description |
+| [Threads](/platforms/threads) | OAuth | ✓ | ✓ | ✓ | ✓ | 500-character text limit |
+| [Pinterest](/platforms/pinterest) | OAuth | — | ✓ | ✓ | ✓ | Requires `board_id` for every pin |
+| [Bluesky](/platforms/bluesky) | Handle + app password | ✓ | ✓ | ✓ | ✓ | 300-character text limit |
+
+## Other platforms
+
+| Platform | Role | Docs |
+|----------|------|------|
+| [Snapchat](/platforms/snapchat) | Unified OAuth + profiles | Connect via `/unified/oauth` |
+| [WhatsApp](/platforms/whatsapp) | Workspace agent (Pro) | Chat channel, not a publish target |
+
+<Info>
+  Unified post/OAuth slugs (lowercase): `linkedin`, `facebook`, `instagram`, `tiktok`, `youtube`, `threads`, `pinterest`, `bluesky`, plus OAuth `snapchat`.
+</Info>
+
+## Connect accounts
+
+OAuth platforms (all except Bluesky):
+
+```bash
+curl -X POST "https://backend.postsiva.com/unified/oauth/url" \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: psk_live_YOUR_KEY" \
+  -d '{"platform": ["linkedin", "instagram", "facebook"]}'
+```
+
+Open each returned `auth_url` to complete OAuth. Check status:
+
+```bash
+curl "https://backend.postsiva.com/unified/oauth/token" \
+  -H "X-API-Key: psk_live_YOUR_KEY"
+```
+
+Bluesky uses handle + app password instead of OAuth — see [Bluesky](/platforms/bluesky).
+
+## Post to multiple platforms
+
+```bash
+curl -X POST "https://backend.postsiva.com/unified/post/text" \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: psk_live_YOUR_KEY" \
+  -d '{
+    "platforms": ["linkedin", "threads", "bluesky"],
+    "default_text": "One caption, three platforms."
+  }'
+```
+
+Each platform in `platforms` gets its own result object. Failures on one platform do not block others.
+
+## Platform-specific fields
+
+Some platforms require extra fields beyond `default_text`:
+
+| Platform | Required / common fields |
+|----------|--------------------------|
+| LinkedIn | `linkedin.linkedin_page_ids`, `post_to_personal` |
+| Facebook | `facebook.facebook_page_ids` |
+| Pinterest | `pinterest.board_id` |
+| YouTube | `youtube.youtube_title`, `youtube.youtube_description` |
+| TikTok | `tiktok.privacy_level` (optional, defaults to public) |
+
+See each platform page for full field reference and examples.
+
+## API key scopes
+
+When using a scoped API key, only platforms listed in the key's `scope` can be connected or posted to. A `linkedin_only` key cannot connect Instagram.
+
+See [Authentication — API key scopes](/authentication#api-key-scopes).
+
+## Related guides
+
+<CardGroup cols={2}>
+  <Card title="Character limits" icon="text-width" href="/guides/character-limits">
+    Per-platform text and caption limits.
+  </Card>
+  <Card title="Media guidelines" icon="image" href="/guides/media-guidelines">
+    Image and video requirements.
+  </Card>
+  <Card title="Scheduling" icon="clock" href="/guides/scheduling">
+    Schedule posts with `scheduled_time`.
+  </Card>
+  <Card title="Drafts" icon="file-pen" href="/guides/drafts">
+    Save drafts and publish later.
+  </Card>
+</CardGroup>

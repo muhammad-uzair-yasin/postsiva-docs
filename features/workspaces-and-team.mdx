@@ -1,0 +1,36 @@
+---
+title: Workspaces & Team
+description: Multi-workspace model, members, roles, invites, and API key scoping.
+---
+
+Everything social is **workspace-scoped**: OAuth tokens, posts, drafts, personas linkage, analytics, and API keys.
+
+## Model
+
+```
+User (billing owner)
+ └── Workspace(s)
+      ├── Members + roles
+      ├── Connected accounts
+      ├── Content (posts, drafts, schedule)
+      └── API keys / MCP access
+```
+
+## Team
+
+| Action | Where |
+|--------|-------|
+| Create / switch workspace | Web + mobile |
+| Invite members | Workspace settings |
+| Roles | Owner / editor / publisher (see Roles API) |
+
+Limits (workspaces, seats, connected accounts) depend on plan — [Plans](/reference/plans).
+
+## API keys
+
+- Created under **Settings → API Keys** (Pro)
+- Prefix `psk_live_…`
+- Resolve workspace from the key (optional `X-Workspace-Id` must match)
+- Optional platform **scopes**
+
+Details: [Authentication](/authentication), [Workspaces](/workspaces).

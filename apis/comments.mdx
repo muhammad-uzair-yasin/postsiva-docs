@@ -1,0 +1,287 @@
+---
+title: Comments
+description: Read comments on recent posts across platforms and reply from a unified inbox API.
+---
+
+Fetch comments on the **last N posts per platform** or reply to a specific comment. Supported platforms: **LinkedIn, Facebook, Instagram, YouTube, Threads, TikTok, Bluesky**.
+
+## Base URL & auth
+
+```
+https://backend.postsiva.com
+```
+
+<CodeGroup>
+
+```bash cURL
+curl "https://backend.postsiva.com/unified/comments?limit=10" \
+  -H "X-API-Key: psk_live_YOUR_KEY"
+```
+
+```javascript JavaScript
+const data = await fetch("https://backend.postsiva.com/unified/comments?limit=10", {
+  headers: { "X-API-Key": "psk_live_YOUR_KEY" },
+}).then((r) => r.json());
+```
+
+```python Python
+import requests
+
+r = requests.get(
+    "https://backend.postsiva.com/unified/comments",
+    headers={"X-API-Key": "psk_live_YOUR_KEY"},
+    params={"limit": 10},
+)
+comments = r.json()
+```
+
+</CodeGroup>
+
+| Header | Required | Notes |
+|--------|----------|-------|
+| `X-API-Key` | Yes (or Bearer) | Workspace from key |
+| `X-Workspace-Id` | JWT only | Required with JWT |
+
+<Note>
+Requires an **Inbox** plan feature (`REQUIRE_INBOX`). See [Authentication](/authentication).
+</Note>
+
+## GET /unified/comments
+
+Dashboard-style inbox: comments on recent posts for each connected platform.
+
+### Query parameters
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `limit` | `integer` | `10` | Posts **per platform** to fetch comments for, **1–50** |
+| `platforms` | `string[]` | all | `linkedin`, `facebook`, `instagram`, `youtube`, `threads`, `tiktok`, `bluesky` |
+| `comments_per_post` | `integer` | `50` | Max comments per post, **1–100** |
+| `force_refresh` | `boolean` | `false` | Bypass comment caches and refresh from platform APIs |
+| `facebook_page_ids` | `string[]` | — | Only use these Facebook Pages for post/comment fetch |
+| `linkedin_organization_ids` | `string[]` | — | Only these LinkedIn orgs for company-post comments |
+
+<Warning>
+`force_refresh` refreshes **comments only**. It does not rebuild unified post lists — LinkedIn org posts are still resolved from DB/cache (same posts used to decide which threads to read).
+</Warning>
+
+### Example
+
+<CodeGroup>
+
+```bash cURL
+curl -G "https://backend.postsiva.com/unified/comments" \
+  -H "X-API-Key: psk_live_YOUR_KEY" \
+  --data-urlencode "limit=5" \
+  --data-urlencode "comments_per_post=25" \
+  --data-urlencode "platforms=facebook" \
+  --data-urlencode "platforms=instagram" \
+  --data-urlencode "facebook_page_ids=123456789012345"
+```
+
+```javascript JavaScript
+const url = new URL("https://backend.postsiva.com/unified/comments");
+url.searchParams.set("limit", "5");
+url.searchParams.set("comments_per_post", "25");
+["facebook", "instagram"].forEach((p) => url.searchParams.append("platforms", p));
+url.searchParams.append("facebook_page_ids", "123456789012345");
+
+const data = await fetch(url, {
+  headers: { "X-API-Key": process.env.POSTSIVA_KEY },
+}).then((r) => r.json());
+```
+
+```python Python
+import requests
+
+requests.get(
+    "https://backend.postsiva.com/unified/comments",
+    headers={"X-API-Key": "psk_live_YOUR_KEY"},
+    params={
+        "limit": 5,
+        "comments_per_post": 25,
+        "platforms": ["facebook", "instagram"],
+        "facebook_page_ids": ["123456789012345"],
+    },
+).json()
+```
+
+</CodeGroup>
+
+### Response structure
+
+Top-level: `success`, plus one slice per platform (`linkedin`, `facebook`, `instagram`, `youtube`, `threads`, `tiktok`, `bluesky`).
+
+Each **platform slice**:
+
+| Field | Description |
+|-------|-------------|
+| `posts` | Array of `{ post_id, comments[], linkedin_page_id?, facebook_page_id? }` |
+| `last_updated` | ISO refresh time |
+| `message` | Optional status text |
+| `error` | Set when platform fetch failed |
+
+Each **comment** (unified shape):
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | `string` | Platform comment id |
+| `type` | `string` | `"comment"` (top-level) or `"reply"` |
+| `text` | `string` | Comment body |
+| `author_name` | `string` | Display name |
+| `author_id` | `string` | Platform author id |
+| `author_profile_image_url` | `string` | Avatar URL when available |
+| `created_at` | `string` | ISO timestamp |
+| `like_count` | `integer` | Likes on the comment |
+| `reply_count` | `integer` | Total replies when available |
+| `parent_id` | `string` | Parent comment id (replies only) |
+| `replies` | `object[]` | Nested replies (each `type: "reply"`) |
+| `platform_meta` | `object` | Extra platform fields |
+
+### Example response
+
+```json
+{
+  "success": true,
+  "facebook": {
+    "posts": [
+      {
+        "post_id": "1234567890_9876543210",
+        "facebook_page_id": "123456789012345",
+        "comments": [
+          {
+            "id": "9876543210987654",
+            "type": "comment",
+            "text": "Love this update!",
+            "author_name": "Jane Doe",
+            "author_id": "111222333",
+            "created_at": "2026-07-07T15:30:00Z",
+            "like_count": 2,
+            "reply_count": 1,
+            "parent_id": null,
+            "replies": [
+              {
+                "id": "9876543210987655",
+                "type": "reply",
+                "text": "Thanks Jane!",
+                "author_name": "Your Page",
+                "parent_id": "9876543210987654",
+                "like_count": 0
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "last_updated": "2026-07-08T12:00:00Z"
+  }
+}
+```
+
+## POST /unified/comments/reply
+
+Publish a reply to an existing comment. IDs are **query parameters**; the JSON body contains only the reply text.
+
+### Query parameters
+
+| Parameter | Required | Description |
+|-----------|----------|-------------|
+| `platform` | Yes | `linkedin`, `facebook`, `instagram`, `youtube`, `threads`, `bluesky`, `tiktok` |
+| `comment_id` | Yes | Comment to reply to (Bluesky: parent `at://` URI) |
+| `facebook_page_id` | Facebook | Page id — **required** when `platform=facebook` |
+| `linkedin_organization_id` | LinkedIn org | Optional; must match stored org on the comment when set |
+
+### Request body
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `text` | `string` | Yes | Reply text (min length 1) |
+
+Post/video id is resolved server-side from synced comment rows where possible (YouTube, Instagram, and Bluesky may require ids from prior comment sync).
+
+<CodeGroup>
+
+```bash cURL
+curl -X POST "https://backend.postsiva.com/unified/comments/reply?platform=facebook&comment_id=9876543210987654&facebook_page_id=123456789012345" \
+  -H "X-API-Key: psk_live_YOUR_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"text":"Thanks for the feedback!"}'
+```
+
+```javascript JavaScript
+const params = new URLSearchParams({
+  platform: "facebook",
+  comment_id: "9876543210987654",
+  facebook_page_id: "123456789012345",
+});
+
+await fetch(`https://backend.postsiva.com/unified/comments/reply?${params}`, {
+  method: "POST",
+  headers: {
+    "X-API-Key": process.env.POSTSIVA_KEY,
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({ text: "Thanks for the feedback!" }),
+});
+```
+
+```python Python
+import requests
+
+requests.post(
+    "https://backend.postsiva.com/unified/comments/reply",
+    headers={"X-API-Key": "psk_live_YOUR_KEY"},
+    params={
+        "platform": "facebook",
+        "comment_id": "9876543210987654",
+        "facebook_page_id": "123456789012345",
+    },
+    json={"text": "Thanks for the feedback!"},
+)
+```
+
+</CodeGroup>
+
+### Reply response
+
+```json
+{
+  "success": true,
+  "reply_id": "9876543210987656",
+  "message": "Reply posted",
+  "platform": "facebook"
+}
+```
+
+### Error codes
+
+| Status | `error` | Meaning |
+|--------|---------|---------|
+| `400` | `PLATFORM_NOT_SUPPORTED` | Invalid platform |
+| `400` | `VALIDATION_ERROR` | Missing page/org id or empty text |
+| `404` | `COMMENT_NOT_FOUND` | Comment not in synced data |
+| `502` | — | Platform API failure |
+
+## Additional comment endpoints
+
+| Method | Path | Purpose |
+|--------|------|---------|
+| `GET` | `/unified/comments/by-post` | Comments for one `post_id` + `platform` (always refreshes when requested) |
+| `GET` | `/unified/comments/replies` | Direct replies to one parent `comment_id` |
+
+Use `facebook_page_ids` / `linkedin_organization_ids` query params the same way as the list endpoint when targeting page/org content.
+
+## MCP equivalents
+
+| MCP tool | REST |
+|----------|------|
+| `get_comments` | `GET /unified/comments` (or `by-post` with `post_id` + `platform`) |
+| `reply_to_comment` | `POST /unified/comments/reply` |
+
+Connect at `https://mcp.postsiva.com/mcp` — [MCP tools](/mcp/tools).
+
+## Related
+
+- [Posts](/apis/posts) — recent posts that comments attach to
+- [OAuth](/apis/oauth) — platforms must be connected before inbox access
+- [Authentication](/authentication) — inbox plan gate

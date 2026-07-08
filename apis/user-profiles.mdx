@@ -1,0 +1,34 @@
+---
+title: User Profiles
+description: GET /unified/user-profiles — connected account metadata for the workspace.
+---
+
+Returns profile slices for connected platforms (names, ids, pages/orgs, avatars, connection metadata).
+
+## Endpoint
+
+```
+GET /unified/user-profiles/
+```
+
+```bash
+curl "https://backend.postsiva.com/unified/user-profiles/?platforms=linkedin&platforms=facebook" \
+  -H "X-API-Key: psk_live_YOUR_KEY"
+```
+
+| Query | Description |
+|-------|-------------|
+| `platforms` | Repeatable; omit for all connected |
+| `force_refresh` | `true` to bypass Redis cache and hit platform APIs |
+
+## Common uses
+
+- Resolve **LinkedIn org page ids** for `linkedin_page_ids`
+- Resolve **Facebook Page ids** for `facebook_page_ids`
+- Confirm which accounts are connected before posting
+- Prefetch reconnect state (`oauth_connection_count` on LinkedIn slice)
+
+## Related
+
+- [OAuth](/apis/oauth) — connect / disconnect
+- [MCP](/mcp/tools) — profile / connected-platforms tools

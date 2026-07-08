@@ -1,0 +1,241 @@
+---
+title: IDs & Scopes
+description: Workspace API keys, scopes, platform slugs, media IDs, post IDs, and comment IDs used across Postsiva APIs.
+---
+
+Postsiva APIs use consistent identifiers for workspaces, keys, platforms, media, posts, and comments. This page is the reference for automation and MCP/GPT integrations.
+
+---
+
+## Workspace API keys
+
+### Format
+
+```
+psk_live_<random_secret>
+```
+
+- Prefix: **`psk_live_`**
+- Scoped to **one workspace**
+- Created in app **Settings → API Keys** or `POST /workspaces/{workspace_id}/api-keys` (JWT, Pro plan)
+- Secret shown **once** at creation; store securely
+
+### Usage
+
+```bash
+X-API-Key: psk_live_YOUR_KEY
+```
+
+Alternative (same behavior):
+
+```bash
+Authorization: Bearer psk_live_YOUR_KEY
+```
+
+### Key metadata
+
+Listed keys expose (never the full secret):
+
+| Field | Description |
+|-------|-------------|
+| `id` | Key row UUID |
+| `key_prefix` | First 8 characters for identification |
+| `workspace_id` | Bound workspace |
+| `scope` | Access restriction string |
+| `name` | Human label |
+| `created_at` | Creation timestamp |
+
+---
+
+## API key scopes
+
+Set `scope` when creating a key. Enforced on OAuth and platform-specific routes.
+
+| Scope | Access |
+|-------|--------|
+| `linkedin_only` | **Default** — LinkedIn OAuth and posting only |
+| `linkedin_posts` | **Read-only** — `GET /unified/posts` only (optional stats via query params) |
+| `linkedin,instagram` | Comma-separated **platform allowlist** for OAuth connect and posting |
+| `full` | All platforms the workspace supports |
+
+### Examples
+
+```json
+{ "name": "Analytics dashboard", "scope": "linkedin_posts" }
+```
+
+```json
+{ "name": "LI + IG automation", "scope": "linkedin,instagram" }
+```
+
+```json
+{ "name": "Full automation", "scope": "full" }
+```
+
+<Note>
+  A `linkedin_only` key **cannot** connect Instagram or call Instagram posting routes — you'll get `403`.
+</Note>
+
+OAuth routes validate scope against requested `platform` values.
+
+---
+
+## Workspace ID
+
+```
+aaa01a56-e769-44a6-87bf-cf6dfb9e7a27
+```
+
+- UUID v4
+- Required as **`X-Workspace-Id`** header when using JWT auth
+- Optional with API keys (workspace inferred from key; if sent, must match)
+- Required query param on some routes: `?workspace_id=...` (AI generate endpoints)
+
+Find workspace IDs in app URLs or `GET /workspaces` (JWT).
+
+---
+
+## Platform slugs
+
+Lowercase strings used in `platforms` arrays and tool arguments.
+
+| Slug | Network | Aliases |
+|------|---------|---------|
+| `linkedin` | LinkedIn | — |
+| `instagram` | Instagram | — |
+| `facebook` | Facebook | — |
+| `threads` | Threads | — |
+| `tiktok` | TikTok | — |
+| `youtube` | YouTube | — |
+| `pinterest` | Pinterest | — |
+| `bluesky` | Bluesky | — |
+| `all` | All supported (generators) | Content/image generators only |
+
+### Page and organization IDs
+
+| Field | Used for |
+|-------|----------|
+| `page_id` | Facebook Page ID or LinkedIn organization ID |
+| `facebook_page_id` | Facebook Page in comments/replies/overrides |
+| `linkedin_organization_id` | LinkedIn company page in comments/replies/overrides |
+
+Pass when posting or generating for **Page/org** context instead of personal profiles.
+
+---
+
+## Media ID
+
+```
+286fa0a8-0a35-4cd4-a43d-2f7cd61b6242
+```
+
+- UUID from **unified media library** (`POST /media/upload`)
+- Returned by `POST /unified/image/generate` as `media_id`
+- Use in posting: `default_image_id`, `video_id`, or agent chat `image_media_id` / `video_media_id`
+
+Media is workspace-scoped — keys from workspace A cannot reference media from workspace B.
+
+---
+
+## Post IDs
+
+Platform-native identifiers returned by `GET /unified/posts` and used in comments APIs.
+
+| Platform | ID format | Notes |
+|----------|-----------|-------|
+| LinkedIn | URN or activity id | e.g. `urn:li:activity:123` — org posts may need org context |
+| Instagram | Media id string | From Graph API |
+| Facebook | `{page_id}_{post_id}` composite | Page-scoped |
+| YouTube | Video id | 11-character id |
+| Threads | Thread/post id | Platform-specific string |
+| Bluesky | `at://` URI | Post and comment URIs |
+| TikTok | Video id | From TikTok API |
+
+### Query usage
+
+```
+GET /unified/comments?post_id=POST_ID&platform=linkedin
+```
+
+For **`get_comments`** MCP tool: pass `post_id` + `platform` to target one post; omit for recent-posts dashboard mode.
+
+---
+
+## Comment ID
+
+Platform-native comment identifier for replies.
+
+```
+GET /unified/comments/reply?platform=instagram&comment_id=17841405793187218&text=Thanks!
+```
+
+| Platform | Notes |
+|----------|-------|
+| LinkedIn | Comment URN |
+| Instagram | Comment id from Graph API |
+| Facebook | Comment id (with `facebook_page_id` when required) |
+| YouTube | Comment thread id |
+| Threads | Comment id; use `post_id` = comment id for top-level thread listing |
+| Bluesky | `at://` URI for parent comment |
+| TikTok | Comment id |
+
+MCP **`reply_to_comment`** resolves post context from synced comment rows when possible (except YouTube/Instagram/Bluesky edge cases — pass ids explicitly).
+
+---
+
+## Agent chat channel values
+
+Stored in `turn_json.channel` for `GET /user-agent-chats`:
+
+| Value | Surface |
+|-------|---------|
+| `website` | Website embedded chat / API |
+| `mobile` | Mobile app agent |
+| `whatsapp` | WhatsApp agent |
+| `instagram_dm` | Instagram DM |
+| `facebook_messenger` | Facebook Messenger |
+
+Filter: `?channel=website`
+
+---
+
+## GPT Actions operation IDs
+
+Tool names match MCP (snake_case):
+
+```
+get_accounts
+publish
+idea_to_content
+disconnect_gpt_connector
+…
+```
+
+Path pattern:
+
+```
+POST /unified/gpt-actions/{operationId}
+```
+
+OpenAPI: `GET /openapi/chatgpt-actions.json`
+
+---
+
+## Quick reference
+
+| ID type | Example | Where used |
+|---------|---------|------------|
+| API key | `psk_live_abc…` | `X-API-Key` header |
+| Workspace | UUID | JWT header, query params |
+| Media | UUID | Posting, agent chat, image generate |
+| Post | Platform string | Comments, analytics refresh |
+| Comment | Platform string | Reply endpoints |
+| Page/org | Numeric or URN | Facebook Pages, LinkedIn orgs |
+
+## Next
+
+<CardGroup cols={2}>
+  <Card title="Authentication" href="/authentication">Headers and plan gates</Card>
+  <Card title="Workspaces" href="/workspaces">Workspace model</Card>
+  <Card title="Plans" href="/reference/plans">Pro requirements for API keys</Card>
+</CardGroup>

@@ -1,0 +1,110 @@
+---
+title: Instagram
+description: Post images, carousels, and videos to Instagram Business accounts — captions up to 2200 characters.
+---
+
+Instagram supports **image**, **carousel**, and **video** posts. Text-only posts are not available through the unified API (Instagram requires media).
+
+## Connect
+
+Requires an Instagram Business or Creator account linked to a Facebook Page.
+
+```bash
+curl -X POST "https://backend.postsiva.com/unified/oauth/url" \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: psk_live_YOUR_KEY" \
+  -d '{"platform": ["instagram"]}'
+```
+
+One Instagram account per workspace.
+
+## Post types
+
+| Type | Endpoint | Media |
+|------|----------|-------|
+| Image | `POST /unified/post/image` | `default_image_id` or `default_image_url` |
+| Carousel | `POST /unified/post/carousel` | `image_ids` (2–20) |
+| Video | `POST /unified/post/video` | `video_id` or `video_url` |
+
+## Example: image post
+
+```bash
+curl -X POST "https://backend.postsiva.com/unified/post/image" \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: psk_live_YOUR_KEY" \
+  -d '{
+    "platforms": ["instagram"],
+    "default_text": "Summer collection is live. Link in bio.",
+    "default_image_id": "your-media-uuid"
+  }'
+```
+
+## Caption limit
+
+Instagram captions are capped at **~2,200 characters**. Postsiva validates at **2,200** and returns `422` if exceeded:
+
+```json
+{
+  "detail": "Max text character limit for instagram is 2200. Received 2300 characters in instagram_text/default_text."
+}
+```
+
+Override caption per platform:
+
+```json
+{
+  "platforms": ["instagram", "threads"],
+  "default_text": "Shared caption.",
+  "instagram": {
+    "instagram_text": "Instagram-specific caption with #hashtags."
+  }
+}
+```
+
+## Media requirements
+
+Instagram has strict aspect ratio rules. Postsiva auto-fits images to allowed ratios (letterboxing) on upload when needed.
+
+| Format | Guidance |
+|--------|----------|
+| Image | JPEG/PNG; 4:5 to 1.91:1 aspect ratio recommended |
+| Carousel | 2–20 images, same aspect ratio per slide |
+| Video | MP4/MOV; Reels-compatible dimensions |
+
+See [Media guidelines](/guides/media-guidelines) for full specs and upload flow.
+
+## Scheduling
+
+```json
+{
+  "platforms": ["instagram"],
+  "default_text": "Launch day post.",
+  "default_image_id": "media-uuid",
+  "scheduled_time": "2026-07-20T12:00:00Z"
+}
+```
+
+Or use `POST /unified/scheduled-posts` for schedule-only requests.
+
+## Multi-platform posting
+
+Instagram pairs well with Facebook and Threads in one call:
+
+```json
+{
+  "platforms": ["instagram", "facebook", "threads"],
+  "default_text": "Cross-posted launch announcement.",
+  "default_image_id": "media-uuid",
+  "facebook": {
+    "facebook_page_ids": ["756356074224043"]
+  }
+}
+```
+
+## Common errors
+
+| Error | Cause | Fix |
+|-------|-------|-----|
+| `NOT_CONNECTED` | Instagram not linked | Connect Business account via OAuth |
+| `422` caption limit | Over 2,200 characters | Shorten caption |
+| Missing media | No image/video ID | Upload via `/media/*` first |

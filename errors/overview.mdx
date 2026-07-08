@@ -1,0 +1,89 @@
+---
+title: Errors Overview
+description: How Postsiva REST and MCP APIs report errors — HTTP status codes and application-level error objects.
+---
+
+Postsiva uses standard HTTP status codes for request-level failures and structured error objects for platform-specific issues.
+
+## Two layers of errors
+
+| Layer | Where | Example |
+|-------|-------|---------|
+| **HTTP status** | Response status line | `401`, `422`, `403` |
+| **Application error** | Response body `error` field | `NOT_CONNECTED`, `plan_required` |
+
+Multi-platform posts often return **HTTP 200** with mixed per-platform results — one platform succeeds while another fails.
+
+## HTTP status codes
+
+See [HTTP errors](/errors/http) for full reference:
+
+| Code | Meaning |
+|------|---------|
+| `400` | Bad request — invalid platform, missing required field |
+| `401` | Missing or invalid API key |
+| `403` | Forbidden — plan gate, scope mismatch, workspace mismatch |
+| `404` | Resource not found |
+| `422` | Validation — character limits, invalid body |
+| `500` | Server error |
+
+## Postsiva error codes
+
+See [Postsiva errors](/errors/postsiva) for application codes:
+
+| Code | Meaning |
+|------|---------|
+| `NOT_CONNECTED` | Platform not linked to workspace |
+| `plan_required` | Feature not on current plan |
+| `APIKEY_INVALID` | Invalid or malformed API key |
+| Scope restriction | Key not allowed for requested platform |
+
+## Multi-platform response shape
+
+```json
+{
+  "results": [
+    {
+      "platform": "linkedin",
+      "success": true,
+      "post_id": "urn:li:share:123"
+    },
+    {
+      "platform": "instagram",
+      "success": false,
+      "error": "NOT_CONNECTED",
+      "message": "Instagram not connected for this workspace."
+    }
+  ]
+}
+```
+
+Always iterate `results` and check `success` per platform.
+
+## MCP errors
+
+MCP returns errors **in-band** as tool results (not separate HTTP auth endpoints):
+
+```
+Invalid or expired API key
+Plan upgrade required for: mcp_enabled
+```
+
+Same underlying checks as REST.
+
+## Debugging checklist
+
+1. **401?** — Verify `X-API-Key` header and key not revoked
+2. **403 plan?** — Check plan feature (drafts, scheduling, MCP, API keys)
+3. **403 scope?** — Key scope must include target platform
+4. **422?** — Check [character limits](/guides/character-limits)
+5. **NOT_CONNECTED?** — Run `GET /unified/oauth/token`
+6. **Partial failure?** — Inspect each item in `results`
+
+## Related
+
+<CardGroup cols={2}>
+  <Card title="HTTP errors" href="/errors/http">Status code reference</Card>
+  <Card title="Postsiva errors" href="/errors/postsiva">Application error codes</Card>
+  <Card title="Authentication" href="/authentication">Keys and scopes</Card>
+</CardGroup>

@@ -1,0 +1,38 @@
+---
+title: Drafts API
+description: CRUD, publish, and schedule for /unified/drafts — workspace-scoped draft posts.
+---
+
+Dedicated drafts API. You can also save drafts via `draft: true` on [Posting](/apis/posting). Requires `drafts_enabled`.
+
+## Endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `POST` | `/unified/drafts` | Create |
+| `GET` | `/unified/drafts` | List |
+| `GET` | `/unified/drafts/{draft_id}` | Get one |
+| `PATCH` | `/unified/drafts/{draft_id}` | Update |
+| `DELETE` | `/unified/drafts/{draft_id}` | Delete |
+| `POST` | `/unified/drafts/{draft_id}/publish` | Publish now |
+| `POST` | `/unified/drafts/{draft_id}/schedule` | Move to schedule |
+
+## List example
+
+```bash
+curl "https://backend.postsiva.com/unified/drafts?platform=linkedin&limit=20" \
+  -H "X-API-Key: psk_live_YOUR_KEY"
+```
+
+Filters: `platform`, `linkedin_page_ids`, `facebook_page_ids`, pagination.
+
+## Publish
+
+```bash
+curl -X POST "https://backend.postsiva.com/unified/drafts/DRAFT_UUID/publish" \
+  -H "X-API-Key: psk_live_YOUR_KEY"
+```
+
+## Guide
+
+Full workflows (including `draft_platforms`): [Drafts guide](/guides/drafts).

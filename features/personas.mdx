@@ -1,0 +1,31 @@
+---
+title: Personas
+description: Brand voice / persona per connected profile or page — used by AI composer, agents, and AI Watcher.
+---
+
+**Personas** (Pro) capture how each social account should sound — tone, audience, topics, and writing rules.
+
+## How they work
+
+- Built per platform account (e.g. LinkedIn member, Facebook Page, Threads profile)
+- Stored against the platform account id (not only workspace)
+- Applied when generating content, agent replies, and comment analysis
+
+## Where they’re used
+
+| Surface | Uses persona |
+|---------|--------------|
+| AI Composer | Yes |
+| Workspace / WhatsApp agents | Yes |
+| AI Watcher auto-replies | Yes |
+| Chrome extension rephrase | When available for LinkedIn |
+
+## In the app
+
+**Settings → Persona** (or platform settings) — build, edit, or rebuild persona from profile data.
+
+## API note
+
+Persona builders live under platform-native routes (e.g. `/linkedin/persona`, `/facebook/persona/...`). Unified publishing does not require sending persona fields — the backend loads the persona for the destination account when generating AI content.
+
+Plan gate: `personas_enabled` (Pro).

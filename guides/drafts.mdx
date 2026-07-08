@@ -1,0 +1,160 @@
+---
+title: Drafts
+description: Save posts as drafts with draft true or draft_platforms — publish or schedule later via REST or MCP.
+---
+
+Drafts let you save post content without publishing. Publish immediately, save everything as draft, or mix — publish some platforms and draft others in one request.
+
+## Two ways to draft
+
+| Method | Behavior |
+|--------|----------|
+| `draft: true` | All platforms in `platforms` saved as draft |
+| `draft_platforms: [...]` | Only listed platforms draft; others publish immediately |
+
+`draft_platforms` must be a **subset** of `platforms`.
+
+## Save all as draft
+
+```bash
+curl -X POST "https://backend.postsiva.com/unified/post/text" \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: psk_live_YOUR_KEY" \
+  -d '{
+    "platforms": ["linkedin", "threads"],
+    "default_text": "Work in progress — not ready to publish.",
+    "draft": true
+  }'
+```
+
+## Mixed draft + publish
+
+Publish to Threads now, save LinkedIn as draft:
+
+```json
+{
+  "platforms": ["linkedin", "threads"],
+  "default_text": "Launch announcement.",
+  "draft_platforms": ["linkedin"]
+}
+```
+
+Threads publishes immediately. LinkedIn saved to drafts.
+
+<Tip>
+  Use mixed mode for urgent cross-posts: ship the fast platform now, refine the professional network copy later.
+</Tip>
+
+## Draft CRUD API
+
+Dedicated draft management at `/unified/drafts`:
+
+| Action | Method | Endpoint |
+|--------|--------|----------|
+| Create | `POST` | `/unified/drafts` |
+| List | `GET` | `/unified/drafts` |
+| Get one | `GET` | `/unified/drafts/{draft_id}` |
+| Update | `PATCH` | `/unified/drafts/{draft_id}` |
+| Delete | `DELETE` | `/unified/drafts/{draft_id}` |
+| Publish | `POST` | `/unified/drafts/{draft_id}/publish` |
+| Schedule | `POST` | `/unified/drafts/{draft_id}/schedule` |
+
+Requires **`drafts_enabled`** on your plan.
+
+### List drafts
+
+```bash
+curl "https://backend.postsiva.com/unified/drafts?platform=linkedin&limit=20" \
+  -H "X-API-Key: psk_live_YOUR_KEY"
+```
+
+Filter LinkedIn/Facebook by page:
+
+| Param | Platform |
+|-------|----------|
+| `linkedin_page_ids` | LinkedIn org pages |
+| `facebook_page_ids` | Facebook Pages |
+
+## Publish draft later
+
+```bash
+curl -X POST "https://backend.postsiva.com/unified/drafts/{draft_id}/publish" \
+  -H "X-API-Key: psk_live_YOUR_KEY"
+```
+
+## Schedule a draft
+
+```bash
+curl -X POST "https://backend.postsiva.com/unified/drafts/{draft_id}/schedule" \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: psk_live_YOUR_KEY" \
+  -d '{"scheduled_time": "2026-07-20T10:00:00Z"}'
+```
+
+## get_queued_posts (MCP)
+
+MCP tool `get_queued_posts` lists drafts and scheduled posts:
+
+```
+get_queued_posts(type="draft")
+get_queued_posts(type="all")
+```
+
+REST equivalents:
+
+- Drafts: `GET /unified/drafts`
+- Scheduled: `GET /unified/scheduled-posts`
+
+## Draft vs schedule-only API
+
+| Feature | `POST /unified/post/*` | `POST /unified/scheduled-posts` |
+|---------|----------------------|--------------------------------|
+| `draft: true` | ✓ | ✗ |
+| `draft_platforms` | ✓ | ✗ |
+| `scheduled_time` | ✓ (optional) | ✓ (required) |
+
+Use post endpoints for drafts. Use scheduled-posts endpoint when you only want to schedule (no draft mixing).
+
+## Platform-specific draft notes
+
+Drafts store platform context including:
+
+| Platform | Stored context |
+|----------|----------------|
+| LinkedIn | `linkedin_page_ids`, personal vs org |
+| Facebook | `facebook_page_ids` |
+| Pinterest | `pinterest_board_id` |
+
+Resolve page/board IDs before publishing — same as live posts.
+
+## Example: draft video for review
+
+```json
+{
+  "platforms": ["youtube", "linkedin"],
+  "default_text": "Product demo caption.",
+  "video_id": "media-uuid",
+  "draft": true,
+  "youtube": {
+    "youtube_title": "Product Demo — Draft Review",
+    "youtube_description": "Internal review copy."
+  },
+  "linkedin": {
+    "linkedin_page_ids": ["108813535"],
+    "post_to_personal": false
+  }
+}
+```
+
+## Plan requirements
+
+Drafts require **`drafts_enabled`**. Publishing a draft consumes a **post credit** like a normal publish.
+
+See [Postsiva errors](/errors/postsiva) for plan-blocked responses.
+
+## Related
+
+<CardGroup cols={2}>
+  <Card title="Scheduling" href="/guides/scheduling">Schedule instead of draft</Card>
+  <Card title="MCP publish tool" href="/mcp/tools">Agent draft + publish</Card>
+</CardGroup>

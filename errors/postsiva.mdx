@@ -1,0 +1,194 @@
+---
+title: Postsiva Errors
+description: Application error codes — NOT_CONNECTED, plan blocked, invalid API key, and scope mismatch.
+---
+
+Beyond HTTP status codes, Postsiva returns structured **`error`** fields in response bodies — especially for multi-platform operations and connection checks.
+
+## NOT_CONNECTED
+
+Platform account is not linked to the workspace.
+
+```json
+{
+  "posts": [],
+  "message": "LinkedIn not connected for this workspace.",
+  "error": "NOT_CONNECTED",
+  "source": null
+}
+```
+
+| Platform | Message pattern |
+|----------|-----------------|
+| linkedin | LinkedIn not connected for this workspace. |
+| facebook | Facebook not connected for this workspace. |
+| instagram | Instagram not connected for this workspace. |
+| tiktok | TikTok not connected for this workspace. |
+| youtube | YouTube not connected for this workspace. |
+| pinterest | Pinterest not connected for this workspace. |
+| threads | Threads not connected for this workspace. |
+| bluesky | Bluesky not connected for this workspace. |
+
+**Where it appears:**
+
+- `GET /unified/posts` — empty slice for disconnected platform
+- `GET /unified/analytics` — platform omitted from totals
+- Multi-platform post `results[]` — `success: false`
+
+**Fix:**
+
+```bash
+# Check status
+curl "https://backend.postsiva.com/unified/oauth/token" \
+  -H "X-API-Key: psk_live_YOUR_KEY"
+
+# Connect
+curl -X POST "https://backend.postsiva.com/unified/oauth/url" \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: psk_live_YOUR_KEY" \
+  -d '{"platform": ["linkedin"]}'
+```
+
+Bluesky requires `handle` + `app_password` — see [Bluesky](/platforms/bluesky).
+
+---
+
+## Plan blocked (`plan_required`)
+
+Feature or credit not available on the workspace owner's plan.
+
+```json
+{
+  "detail": {
+    "error": "plan_required",
+    "feature": "drafts_enabled",
+    "plan": "free",
+    "message": "Plan upgrade required for: drafts_enabled"
+  }
+}
+```
+
+### Common feature gates
+
+| Feature key | Blocks |
+|-------------|--------|
+| `api_keys_enabled` | API key authentication |
+| `mcp_enabled` | Unified MCP access |
+| `gpt_app_enabled` | GPT Actions |
+| `drafts_enabled` | Draft create/list/publish |
+| `scheduling_enabled` | Schedule posts |
+| `analytics_enabled` | Unified analytics |
+| `ai_composer_enabled` | AI content/image generation |
+| `auto_replier_enabled` | AI comment replies |
+
+HTTP status: **`403 Forbidden`**
+
+Credit exhaustion uses **`402 Payment Required`**:
+
+```json
+{
+  "detail": "Insufficient posts credits"
+}
+```
+
+**Fix:** Upgrade plan at [postsiva.com](https://postsiva.com) or reduce usage.
+
+---
+
+## Invalid API key
+
+| Code | Message | HTTP |
+|------|---------|------|
+| `APIKEY_INVALID` | Invalid API key. | 401 |
+| `APIKEY_NOT_FOUND` | API key not found. | 401 |
+| `APIKEY_REVOKED` | API key has been revoked. | 401 |
+| `APIKEY_EXPIRED` | API key has expired. | 401 |
+| `APIKEY_RATE_LIMIT` | API key rate limit exceeded. | 429 / 403 |
+
+**Fix:**
+1. Confirm key starts with `psk_live_`
+2. Copy full key from Settings (shown once at creation)
+3. Revoke compromised keys and create new ones
+
+MCP returns plain text in tool results:
+
+```
+Invalid or expired API key
+That API key is invalid or revoked. Generate a new workspace API key...
+```
+
+---
+
+## Scope mismatch
+
+API key `scope` restricts which platforms can be accessed.
+
+```json
+{
+  "detail": "This API key is not allowed for platform 'instagram'. Key scope: linkedin_only. Only platforms in the key's scope can be used."
+}
+```
+
+HTTP status: **`403 Forbidden`**
+
+### Scope examples
+
+| Scope | Can connect/post |
+|-------|------------------|
+| `linkedin_only` | LinkedIn only (default) |
+| `linkedin_posts` | Read-only: `GET /unified/posts` |
+| `linkedin,instagram` | LinkedIn + Instagram |
+| `full` | All supported platforms |
+
+**Fix:** Create a new key with appropriate scope in **Settings → API Keys**.
+
+OAuth connect, post, and read endpoints all enforce scope.
+
+---
+
+## Platform-specific errors
+
+| Error | Platform | Cause |
+|-------|----------|-------|
+| `board_id_required` | Pinterest | Missing `pinterest.board_id` |
+| `bluesky_text_error` | Bluesky | Post creation failed |
+| YouTube title message | YouTube | No title provided |
+
+These appear in post `results[]` with `success: false`.
+
+---
+
+## Handling in code
+
+```javascript
+const res = await fetch("https://backend.postsiva.com/unified/post/text", {
+  method: "POST",
+  headers: {
+    "X-API-Key": process.env.POSTSIVA_KEY,
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({ platforms: ["linkedin"], default_text: "Hi" }),
+});
+
+if (res.status === 401) throw new Error("Check API key");
+if (res.status === 403) {
+  const err = await res.json();
+  if (err.detail?.error === "plan_required") throw new Error("Upgrade plan");
+  throw new Error("Scope or permission issue");
+}
+
+const data = await res.json();
+for (const r of data.results ?? [data]) {
+  if (!r.success && r.error === "NOT_CONNECTED") {
+    console.warn(`${r.platform} not connected — skip or connect first`);
+  }
+}
+```
+
+## Related
+
+<CardGroup cols={2}>
+  <Card title="HTTP errors" href="/errors/http">Status codes</Card>
+  <Card title="Authentication" href="/authentication">Scopes and plan table</Card>
+  <Card title="Errors overview" href="/errors/overview">Two-layer model</Card>
+</CardGroup>

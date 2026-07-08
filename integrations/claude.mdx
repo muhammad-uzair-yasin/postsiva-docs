@@ -1,0 +1,45 @@
+---
+title: Claude Desktop
+description: Connect Postsiva Unified MCP to Claude Desktop with your workspace API key.
+---
+
+Use Postsiva tools inside **Claude Desktop** via the Model Context Protocol (same server as Cursor).
+
+## Requirements
+
+- Pro plan with `mcp_enabled`
+- Workspace API key (`psk_live_…`)
+- Claude Desktop with MCP support
+
+## Config
+
+Add to Claude Desktop MCP settings (JSON shape varies slightly by Claude version):
+
+```json
+{
+  "mcpServers": {
+    "postsiva": {
+      "url": "https://mcp.postsiva.com/mcp",
+      "headers": {
+        "X-API-Key": "psk_live_YOUR_KEY"
+      }
+    }
+  }
+}
+```
+
+If your Claude build expects a query param instead:
+
+```
+https://mcp.postsiva.com/mcp?apikey=psk_live_YOUR_KEY
+```
+
+## What Claude can do
+
+Same [MCP tool catalog](/mcp/tools): publish, posts, comments, analytics helpers, OAuth connect helpers, AI content, queue/drafts, web search.
+
+## Related
+
+- [MCP connect](/mcp/connect)
+- [Cursor](/mcp/cursor)
+- [ChatGPT](/mcp/chatgpt)

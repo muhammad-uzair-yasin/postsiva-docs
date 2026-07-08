@@ -1,0 +1,24 @@
+---
+title: Ads (Beta)
+description: Partial LinkedIn, Facebook/Instagram, Google, and TikTok ads modules — not part of the unified publishing API.
+---
+
+Postsiva includes **partial** ads tooling under platform-native `/linkedin-ads`, `/tiktok-ads`, and related routes. This is separate from organic unified publishing.
+
+## Status
+
+| Network | Status |
+|---------|--------|
+| LinkedIn Ads | Partial (accounts, text campaigns / creatives) |
+| TikTok Ads | Partial (auth, advertiser info) |
+| Facebook / Google Ads | Partial modules in backend |
+
+## Important
+
+- Ads are **not** exposed on Unified MCP today
+- Prefer the web **Ad platform** UI where available
+- Organic posts remain under `/unified/post/*`
+
+<Warning>
+  Ads APIs may change without the same stability guarantees as unified publishing. Confirm with `GET /docs` (Swagger) on your environment before building production ads automations.
+</Warning>

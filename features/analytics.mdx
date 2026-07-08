@@ -1,0 +1,25 @@
+---
+title: Analytics
+description: Cross-platform engagement metrics from connected social accounts in one response.
+---
+
+Pull likes, comments, reach, views, and more across networks with one call (Starter+).
+
+## REST
+
+```bash
+curl "https://backend.postsiva.com/unified/analytics" \
+  -H "X-API-Key: psk_live_YOUR_KEY"
+```
+
+Optional filters: platforms, date range, force refresh — see [Analytics API](/apis/analytics).
+
+## Also available
+
+- Per-post stats on [GET /unified/posts](/apis/posts) (`stats=true`)
+- Platform-native insight routes (Facebook page insights, Threads insights, etc.) used by the web app
+- MCP tools that surface the same analytics data
+
+## Plan gate
+
+Requires `analytics_enabled` (Starter / Pro).

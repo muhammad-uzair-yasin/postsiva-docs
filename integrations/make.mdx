@@ -1,0 +1,45 @@
+---
+title: Make.com
+description: Automate Postsiva with Make (Integromat) HTTP modules and your workspace API key.
+---
+
+Make.com has no native Postsiva app — use the **HTTP** module against the REST API (same pattern as Zapier).
+
+## Setup
+
+1. Create a Pro workspace API key
+2. In Make: **HTTP → Make a request**
+3. URL: `https://backend.postsiva.com/...`
+4. Headers:
+   - `X-API-Key`: `psk_live_…`
+   - `Content-Type`: `application/json`
+
+## Example scenario
+
+**Cron → HTTP POST** publish text:
+
+- Method: `POST`
+- URL: `https://backend.postsiva.com/unified/post/text`
+- Body:
+
+```json
+{
+  "platforms": ["linkedin", "threads"],
+  "default_text": "Automated update from Make."
+}
+```
+
+## Useful modules
+
+| Scenario | Endpoint |
+|----------|----------|
+| Daily analytics digests | `GET /unified/analytics` |
+| Queue check | `GET /unified/scheduled-posts` |
+| Upload then post | `POST` media upload → `POST /unified/post/image` |
+| Comment reply | `POST /unified/comments/reply` |
+
+## Related
+
+- [Integrations overview](/integrations/overview)
+- [cURL recipes](/integrations/curl)
+- [Zapier](/integrations/zapier)

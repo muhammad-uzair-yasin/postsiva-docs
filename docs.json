@@ -1,0 +1,138 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "theme": "mint",
+  "name": "Postsiva",
+  "colors": {
+    "primary": "#6366F1",
+    "light": "#818CF8",
+    "dark": "#4F46E5"
+  },
+  "topbarLinks": [
+    {
+      "name": "App",
+      "url": "https://postsiva.com"
+    }
+  ],
+  "topbarCtaButton": {
+    "name": "Get API Key",
+    "url": "https://postsiva.com/settings/api-keys"
+  },
+  "navigation": {
+    "groups": [
+      {
+        "group": "Get started",
+        "pages": [
+          "introduction",
+          "quickstart",
+          "guides/complete-setup",
+          "authentication",
+          "workspaces"
+        ]
+      },
+      {
+        "group": "Features",
+        "pages": [
+          "features/overview",
+          "features/publishing",
+          "features/scheduling-and-drafts",
+          "features/inbox",
+          "features/analytics",
+          "features/ai-content",
+          "features/ai-watcher",
+          "features/personas",
+          "features/agents",
+          "features/workspaces-and-team",
+          "features/clients",
+          "features/ads"
+        ]
+      },
+      {
+        "group": "REST API",
+        "pages": [
+          "apis/overview",
+          "apis/posting",
+          "apis/posting-parameters",
+          "apis/posts",
+          "apis/scheduled-posts",
+          "apis/drafts",
+          "apis/analytics",
+          "apis/comments",
+          "apis/oauth",
+          "apis/user-profiles",
+          "apis/media",
+          "apis/ai-content",
+          "apis/ai-watcher",
+          "apis/agent-chat",
+          "apis/gpt-actions"
+        ]
+      },
+      {
+        "group": "MCP",
+        "pages": [
+          "mcp/overview",
+          "mcp/connect",
+          "mcp/tools",
+          "mcp/cursor",
+          "mcp/n8n",
+          "mcp/chatgpt"
+        ]
+      },
+      {
+        "group": "Platforms",
+        "pages": [
+          "platforms/overview",
+          "platforms/linkedin",
+          "platforms/facebook",
+          "platforms/instagram",
+          "platforms/tiktok",
+          "platforms/youtube",
+          "platforms/threads",
+          "platforms/pinterest",
+          "platforms/bluesky",
+          "platforms/snapchat",
+          "platforms/whatsapp"
+        ]
+      },
+      {
+        "group": "Guides",
+        "pages": [
+          "guides/media-guidelines",
+          "guides/character-limits",
+          "guides/scheduling",
+          "guides/drafts"
+        ]
+      },
+      {
+        "group": "Integrations",
+        "pages": [
+          "integrations/overview",
+          "integrations/n8n",
+          "integrations/zapier",
+          "integrations/make",
+          "integrations/curl",
+          "integrations/claude",
+          "integrations/chrome-extension",
+          "integrations/whatsapp"
+        ]
+      },
+      {
+        "group": "Errors",
+        "pages": [
+          "errors/overview",
+          "errors/http",
+          "errors/postsiva"
+        ]
+      },
+      {
+        "group": "Reference",
+        "pages": [
+          "reference/plans",
+          "reference/ids-and-scopes"
+        ]
+      }
+    ]
+  },
+  "footerSocials": {
+    "website": "https://postsiva.com"
+  }
+}

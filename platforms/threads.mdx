@@ -1,0 +1,119 @@
+---
+title: Threads
+description: Post text, images, carousels, and video to Threads — 500-character text limit.
+---
+
+Threads supports text, image, carousel, and video posts. One Threads account per workspace.
+
+## Connect
+
+```bash
+curl -X POST "https://backend.postsiva.com/unified/oauth/url" \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: psk_live_YOUR_KEY" \
+  -d '{"platform": ["threads"]}'
+```
+
+Threads uses Meta OAuth (same ecosystem as Instagram and Facebook).
+
+## Post types
+
+| Type | Endpoint | Text limit |
+|------|----------|------------|
+| Text | `POST /unified/post/text` | **500 characters** |
+| Image | `POST /unified/post/image` | 500 chars (caption) |
+| Carousel | `POST /unified/post/carousel` | 2,200 chars (caption) |
+| Video | `POST /unified/post/video` | 2,200 chars (caption) |
+
+<Warning>
+  **Text posts** are limited to **500 characters**. Image, carousel, and video **captions** allow up to **2,200 characters**.
+</Warning>
+
+## Text post
+
+```bash
+curl -X POST "https://backend.postsiva.com/unified/post/text" \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: psk_live_YOUR_KEY" \
+  -d '{
+    "platforms": ["threads"],
+    "default_text": "Quick thought for Threads — keep it under 500 chars."
+  }'
+```
+
+## Platform override
+
+Use `threads.threads_text` to override `default_text` when posting to multiple platforms:
+
+```json
+{
+  "platforms": ["threads", "linkedin"],
+  "default_text": "Longer LinkedIn version with full context and details...",
+  "threads": {
+    "threads_text": "Short Threads version."
+  }
+}
+```
+
+## Image posts
+
+Provide **`default_image_id`** or **`default_image_url`** (HTTPS). Postsiva auto-uploads URLs and posts with the resolved media ID:
+
+```json
+{
+  "platforms": ["threads"],
+  "default_text": "Photo caption.",
+  "default_image_url": "https://cdn.example.com/photo.jpg"
+}
+```
+
+Or upload first via `POST /media/upload` and pass `default_image_id`.
+
+## Character validation
+
+Text posts exceeding 500 characters return `422`:
+
+```json
+{
+  "detail": "Max text character limit for threads is 500. Received 520 characters in threads_text/default_text."
+}
+```
+
+See [Character limits](/guides/character-limits).
+
+## Multi-platform example
+
+```json
+{
+  "platforms": ["threads", "bluesky", "linkedin"],
+  "default_text": "Cross-posted update.",
+  "threads": {
+    "threads_text": "Threads: short take."
+  },
+  "linkedin": {
+    "post_to_personal": true
+  }
+}
+```
+
+Each platform enforces its own limit independently.
+
+## Scheduling and drafts
+
+```json
+{
+  "platforms": ["threads"],
+  "default_text": "Scheduled thread.",
+  "scheduled_time": "2026-07-12T18:00:00Z"
+}
+```
+
+See [Scheduling](/guides/scheduling) and [Drafts](/guides/drafts).
+
+## Common errors
+
+| Error | Cause | Fix |
+|-------|-------|-----|
+| `NOT_CONNECTED` | Threads not linked | Complete Meta OAuth |
+| `422` text limit | Over 500 chars on text post | Shorten or use image post for longer caption |
+| Missing media | No `default_image_id` or `default_image_url` | Upload via `/media/upload` or pass HTTPS URL |

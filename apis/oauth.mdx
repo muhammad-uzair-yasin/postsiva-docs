@@ -1,0 +1,303 @@
+---
+title: OAuth
+description: Connect, check status, and disconnect social accounts across all supported platforms.
+---
+
+Unified OAuth routes manage account connections for your workspace. OAuth platforms return an **`auth_url`** to open in a browser; Bluesky uses **handle + app password** (no redirect).
+
+## Base URL & auth
+
+```
+https://backend.postsiva.com
+```
+
+<CodeGroup>
+
+```bash cURL
+curl -X POST "https://backend.postsiva.com/unified/oauth/url" \
+  -H "X-API-Key: psk_live_YOUR_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"platform":["linkedin","instagram"]}'
+```
+
+```javascript JavaScript
+await fetch("https://backend.postsiva.com/unified/oauth/url", {
+  method: "POST",
+  headers: {
+    "X-API-Key": "psk_live_YOUR_KEY",
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({ platform: ["linkedin", "instagram"] }),
+});
+```
+
+```python Python
+import requests
+
+requests.post(
+    "https://backend.postsiva.com/unified/oauth/url",
+    headers={"X-API-Key": "psk_live_YOUR_KEY"},
+    json={"platform": ["linkedin", "instagram"]},
+)
+```
+
+</CodeGroup>
+
+| Header | Required | Notes |
+|--------|----------|-------|
+| `X-API-Key` | Yes (or Bearer) | Workspace from key; scope may restrict platforms |
+| `X-Workspace-Id` | JWT only | Required with JWT |
+| `Content-Type` | POST bodies | `application/json` |
+
+## Supported platforms
+
+| Platform | Connect method |
+|----------|----------------|
+| `linkedin` | OAuth redirect |
+| `instagram` | OAuth redirect |
+| `facebook` | OAuth redirect |
+| `tiktok` | TikTok Business OAuth |
+| `youtube` | Google/YouTube OAuth |
+| `pinterest` | OAuth redirect |
+| `threads` | OAuth redirect |
+| `bluesky` | Handle + app password (no `auth_url`) |
+
+Platform callbacks remain on existing routes (e.g. `/linkedin/oauth/callback`) after the user authorizes.
+
+## API key scope
+
+<Warning>
+Workspace API keys can be scoped to specific platforms. A key with scope `linkedin_only` or `linkedin,instagram` **cannot** connect or disconnect platforms outside that list — requests return **`403`**.
+</Warning>
+
+| Scope example | Effect |
+|---------------|--------|
+| `linkedin_only` | LinkedIn only |
+| `linkedin,instagram` | Comma-separated allowlist |
+| `linkedin_posts` | Read-only posts — **no OAuth** |
+| `full` / empty | All platforms the workspace supports |
+
+See [Authentication](/authentication) for creating scoped keys.
+
+## POST /unified/oauth/url
+
+Start OAuth or complete Bluesky connect.
+
+### Request body
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `platform` | `string[]` | Yes | One or more platform names (comma-separated strings in one array entry are split server-side) |
+| `handle` | `string` | Bluesky | Bluesky handle, e.g. `you.bsky.social` |
+| `app_password` | `string` | Bluesky | Bluesky app password (not account password) |
+
+### OAuth platforms response
+
+```json
+{
+  "results": {
+    "linkedin": {
+      "success": true,
+      "message": "OAuth URL generated",
+      "auth_url": "https://www.linkedin.com/oauth/v2/authorization?..."
+    },
+    "instagram": {
+      "success": true,
+      "message": "OAuth URL generated",
+      "auth_url": "https://api.instagram.com/oauth/authorize?..."
+    }
+  }
+}
+```
+
+Open each `auth_url` in a browser. After callback, verify with [GET /unified/oauth/token](#get-socialoauthtoken).
+
+### Bluesky connect
+
+No redirect URL — send credentials in the same POST:
+
+<CodeGroup>
+
+```bash cURL
+curl -X POST "https://backend.postsiva.com/unified/oauth/url" \
+  -H "X-API-Key: psk_live_YOUR_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "platform": ["bluesky"],
+    "handle": "you.bsky.social",
+    "app_password": "xxxx-xxxx-xxxx-xxxx"
+  }'
+```
+
+```javascript JavaScript
+await fetch("https://backend.postsiva.com/unified/oauth/url", {
+  method: "POST",
+  headers: {
+    "X-API-Key": process.env.POSTSIVA_KEY,
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({
+    platform: ["bluesky"],
+    handle: "you.bsky.social",
+    app_password: "xxxx-xxxx-xxxx-xxxx",
+  }),
+});
+```
+
+```python Python
+import requests
+
+requests.post(
+    "https://backend.postsiva.com/unified/oauth/url",
+    headers={"X-API-Key": "psk_live_YOUR_KEY"},
+    json={
+        "platform": ["bluesky"],
+        "handle": "you.bsky.social",
+        "app_password": "xxxx-xxxx-xxxx-xxxx",
+    },
+)
+```
+
+</CodeGroup>
+
+```json
+{
+  "results": {
+    "bluesky": {
+      "success": true,
+      "message": "Bluesky account connected",
+      "auth_url": null
+    }
+  }
+}
+```
+
+<Note>
+Create a Bluesky **app password** in Settings → App passwords. Never use your main account password in API calls.
+</Note>
+
+## GET /unified/oauth/token
+
+Check connection status per platform. **Token values are never returned** — only `success: true/false`.
+
+### Query parameters
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `platform` | `string[]` | all token platforms | One or more platforms to check. Omit for full workspace scan (respects API key scope) |
+
+<CodeGroup>
+
+```bash cURL
+curl "https://backend.postsiva.com/unified/oauth/token?platform=linkedin&platform=facebook" \
+  -H "X-API-Key: psk_live_YOUR_KEY"
+```
+
+```javascript JavaScript
+const url = new URL("https://backend.postsiva.com/unified/oauth/token");
+["linkedin", "facebook"].forEach((p) => url.searchParams.append("platform", p));
+
+const data = await fetch(url, {
+  headers: { "X-API-Key": process.env.POSTSIVA_KEY },
+}).then((r) => r.json());
+```
+
+```python Python
+import requests
+
+requests.get(
+    "https://backend.postsiva.com/unified/oauth/token",
+    headers={"X-API-Key": "psk_live_YOUR_KEY"},
+    params={"platform": ["linkedin", "facebook"]},
+).json()
+```
+
+</CodeGroup>
+
+### Response
+
+```json
+{
+  "results": {
+    "linkedin": { "success": true },
+    "facebook": { "success": true },
+    "instagram": { "success": false, "message": "Not connected" },
+    "tiktok": { "success": true },
+    "youtube": { "success": false, "message": "Not connected" },
+    "pinterest": { "success": false, "message": "Not connected" },
+    "threads": { "success": true },
+    "bluesky": { "success": false, "message": "Not connected" }
+  }
+}
+```
+
+When `platform` is omitted, all token-supported platforms are checked in batch (filtered by key scope).
+
+## DELETE /unified/oauth/token
+
+Disconnect one or more platforms. **`platform` query param is required** (repeat for multiple).
+
+| Parameter | Required | Description |
+|-----------|----------|-------------|
+| `platform` | Yes | e.g. `?platform=linkedin&platform=instagram` |
+
+<CodeGroup>
+
+```bash cURL
+curl -X DELETE "https://backend.postsiva.com/unified/oauth/token?platform=linkedin" \
+  -H "X-API-Key: psk_live_YOUR_KEY"
+```
+
+```javascript JavaScript
+await fetch(
+  "https://backend.postsiva.com/unified/oauth/token?platform=linkedin",
+  {
+    method: "DELETE",
+    headers: { "X-API-Key": process.env.POSTSIVA_KEY },
+  }
+);
+```
+
+```python Python
+import requests
+
+requests.delete(
+    "https://backend.postsiva.com/unified/oauth/token",
+    headers={"X-API-Key": "psk_live_YOUR_KEY"},
+    params={"platform": "linkedin"},
+)
+```
+
+</CodeGroup>
+
+```json
+{
+  "results": {
+    "linkedin": {
+      "success": true,
+      "message": "Token deleted",
+      "data": null
+    }
+  }
+}
+```
+
+<Note>
+Successful disconnect sends an account-disconnected notification email to workspace owners when configured.
+</Note>
+
+## MCP equivalents
+
+| MCP tool | REST |
+|----------|------|
+| `manage_platform_connection` (`connect`) | `POST /unified/oauth/url` |
+| `manage_platform_connection` (`disconnect`) | `DELETE /unified/oauth/token` |
+| `get_accounts` | `GET /unified/oauth/token` + profile endpoints |
+
+Connect at `https://mcp.postsiva.com/mcp` — [MCP tools](/mcp/tools).
+
+## Related
+
+- [Posting](/apis/posting) — requires connected accounts
+- [Posts](/apis/posts) — lists content from connected networks
+- [Authentication](/authentication) — API key scopes and Pro plan for keys/MCP

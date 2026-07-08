@@ -1,0 +1,45 @@
+---
+title: Scheduling & Drafts
+description: Queue posts for later, save drafts, publish now, or move scheduled items back to drafts.
+---
+
+**Starter+** unlocks drafts and scheduling. **Pro** also unlocks bulk scheduling.
+
+## Ways to schedule
+
+| Method | API |
+|--------|-----|
+| `scheduled_time` on a post | `POST /unified/post/text\|image\|video\|carousel` |
+| Schedule-only | `POST /unified/scheduled-posts` |
+| MCP | `publish` with schedule args / `get_queued_posts` |
+
+Use **ISO 8601 UTC** (`2026-07-10T14:30:00Z`). Celery workers publish when due.
+
+## Drafts
+
+| Method | API |
+|--------|-----|
+| `draft: true` on post body | Saves without publishing |
+| `draft_platforms` | Draft some networks, publish others |
+| Dedicated drafts API | `GET/POST/PATCH/DELETE /unified/drafts` |
+
+## Queue management
+
+```bash
+# List scheduled
+curl "https://backend.postsiva.com/unified/scheduled-posts?status=scheduled" \
+  -H "X-API-Key: psk_live_YOUR_KEY"
+
+# List drafts
+curl "https://backend.postsiva.com/unified/drafts" \
+  -H "X-API-Key: psk_live_YOUR_KEY"
+```
+
+Scheduled items support update, delete, **publish now**, and **move to draft**.
+
+## Guides
+
+- [Scheduling](/guides/scheduling)
+- [Drafts](/guides/drafts)
+- [Scheduled posts API](/apis/scheduled-posts)
+- [Drafts API](/apis/drafts)

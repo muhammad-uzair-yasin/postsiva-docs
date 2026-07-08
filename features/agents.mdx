@@ -1,0 +1,40 @@
+---
+title: Agents
+description: Workspace AI agent, WhatsApp agent, Instagram/Facebook DM agents, Unified MCP, and GPT Actions.
+---
+
+Postsiva agents use the same workspace tools as the REST/MCP stack — connect accounts, publish, read posts, reply to comments, generate content.
+
+## Agent surfaces
+
+| Agent | Channel | Plan |
+|-------|---------|------|
+| **Website / workspace agent** | Web chat + `POST /workspace-agent/website/chat` | Pro (API key) |
+| **Mobile AI agent** | Mobile app Agent tab | Pro features |
+| **WhatsApp agent** | WhatsApp Business conversation | `whatsapp_agent_enabled` |
+| **Instagram DM agent** | Instagram messaging | `instagram_dm_enabled` |
+| **Facebook Messenger agent** | Facebook DM | `facebook_dm_enabled` |
+| **Unified MCP** | Cursor, Claude, MCP clients | `mcp_enabled` |
+| **GPT Actions** | ChatGPT Custom GPT | `gpt_app_enabled` |
+
+## Tools (same core)
+
+Agents typically can:
+
+- List connected platforms / profiles
+- Publish text, image, video, carousel
+- List posts, drafts, scheduled queue
+- List / reply to comments
+- Generate content and images
+- Connect / disconnect OAuth (where allowed)
+- Web search (MCP / WhatsApp; not GPT Actions)
+
+Catalog: [MCP tools](/mcp/tools).
+
+## Docs
+
+- [Agent chat API](/apis/agent-chat)
+- [WhatsApp](/platforms/whatsapp)
+- [MCP overview](/mcp/overview)
+- [GPT Actions](/apis/gpt-actions)
+- [Claude Desktop](/integrations/claude)

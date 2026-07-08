@@ -1,0 +1,214 @@
+---
+title: Analytics
+description: Cross-platform engagement totals from stored post metrics — fast DB aggregates with no live API refresh.
+---
+
+Return **likes, comments, reach, and engagement rate** per platform and workspace-wide totals. This endpoint reads **only from the Postsiva database** — it does not call LinkedIn, Meta, or other external APIs on each request.
+
+## Base URL & auth
+
+```
+https://backend.postsiva.com
+```
+
+<CodeGroup>
+
+```bash cURL
+curl "https://backend.postsiva.com/unified/analytics" \
+  -H "X-API-Key: psk_live_YOUR_KEY"
+```
+
+```javascript JavaScript
+const data = await fetch("https://backend.postsiva.com/unified/analytics", {
+  headers: { "X-API-Key": "psk_live_YOUR_KEY" },
+}).then((r) => r.json());
+```
+
+```python Python
+import requests
+
+r = requests.get(
+    "https://backend.postsiva.com/unified/analytics",
+    headers={"X-API-Key": "psk_live_YOUR_KEY"},
+)
+analytics = r.json()
+```
+
+</CodeGroup>
+
+| Header | Required | Notes |
+|--------|----------|-------|
+| `X-API-Key` | Yes (or Bearer) | Workspace from key |
+| `X-Workspace-Id` | JWT only | Required with JWT |
+
+<Note>
+Requires an **Analytics** plan feature (`REQUIRE_ANALYTICS`). Blocked workspaces receive a plan upgrade message. See [Authentication](/authentication).
+</Note>
+
+## GET /unified/analytics
+
+### Query parameters
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `platforms` | `string[]` | all connected | Filter: `linkedin`, `facebook`, `instagram`, `tiktok`, `youtube`, `threads`, `pinterest`, `bluesky` |
+| `facebook_page_ids` | `string[]` | — | Limit Facebook aggregation to these Page IDs |
+| `linkedin_organization_ids` | `string[]` | — | Limit LinkedIn to org/page posts; **excludes personal** when set |
+
+Omit `platforms` to aggregate all supported networks the workspace has connected (OAuth batch + Threads from workspace DB). Disconnected platforms appear with zero counts and an explanatory `message`.
+
+### Example — LinkedIn org + Facebook pages only
+
+<CodeGroup>
+
+```bash cURL
+curl -G "https://backend.postsiva.com/unified/analytics" \
+  -H "X-API-Key: psk_live_YOUR_KEY" \
+  --data-urlencode "platforms=linkedin" \
+  --data-urlencode "platforms=facebook" \
+  --data-urlencode "linkedin_organization_ids=10987654321" \
+  --data-urlencode "facebook_page_ids=123456789012345"
+```
+
+```javascript JavaScript
+const url = new URL("https://backend.postsiva.com/unified/analytics");
+["linkedin", "facebook"].forEach((p) => url.searchParams.append("platforms", p));
+url.searchParams.append("linkedin_organization_ids", "10987654321");
+url.searchParams.append("facebook_page_ids", "123456789012345");
+
+const data = await fetch(url, {
+  headers: { "X-API-Key": process.env.POSTSIVA_KEY },
+}).then((r) => r.json());
+```
+
+```python Python
+import requests
+
+requests.get(
+    "https://backend.postsiva.com/unified/analytics",
+    headers={"X-API-Key": "psk_live_YOUR_KEY"},
+    params={
+        "platforms": ["linkedin", "facebook"],
+        "linkedin_organization_ids": ["10987654321"],
+        "facebook_page_ids": ["123456789012345"],
+    },
+).json()
+```
+
+</CodeGroup>
+
+## Response structure
+
+| Field | Description |
+|-------|-------------|
+| `success` | `true` on success |
+| `message` | e.g. `"Unified analytics from database."` |
+| `source` | Always `"database"` for this endpoint |
+| `last_updated` | ISO timestamp of newest underlying row, when available |
+| `platforms` | Map of platform name → slice |
+| `totals` | Workspace-wide sums across included platforms |
+
+### Per-platform slice (`platforms.linkedin`, etc.)
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `post_count` | `integer` | Posts/rows counted in DB |
+| `total_likes` | `integer` | Sum of likes/reactions |
+| `total_comments` | `integer` | Sum of comments/replies |
+| `total_reach` | `integer` | Sum of reach/impressions/views (platform-specific) |
+| `average_engagement_rate` | `float` | `(likes + comments) / max(reach, 1)`, capped at `1.0` |
+| `message` | `string` | Optional notes (e.g. Pinterest uses saves/clicks vs impressions) |
+| `error` | `string` | Set if aggregation failed for this platform |
+
+### Workspace totals (`totals`)
+
+Cross-platform sums for the filtered set, typically:
+
+| Key | Description |
+|-----|-------------|
+| `post_count` | Total posts counted |
+| `total_likes` | Sum of likes |
+| `total_comments` | Sum of comments |
+| `total_reach` | Sum of reach/impressions |
+| `average_engagement_rate` | Weighted or combined engagement metric |
+
+### Example response
+
+```json
+{
+  "success": true,
+  "message": "Unified analytics from database.",
+  "source": "database",
+  "last_updated": "2026-07-08T06:00:00Z",
+  "platforms": {
+    "linkedin": {
+      "post_count": 24,
+      "total_likes": 890,
+      "total_comments": 112,
+      "total_reach": 45000,
+      "average_engagement_rate": 0.0223,
+      "message": null,
+      "error": null
+    },
+    "instagram": {
+      "post_count": 18,
+      "total_likes": 2100,
+      "total_comments": 340,
+      "total_reach": 82000,
+      "average_engagement_rate": 0.0298,
+      "message": null,
+      "error": null
+    },
+    "pinterest": {
+      "post_count": 6,
+      "total_likes": 0,
+      "total_comments": 0,
+      "total_reach": 12000,
+      "average_engagement_rate": 0.015,
+      "message": "Pinterest engagement uses saves and clicks vs impressions."
+    }
+  },
+  "totals": {
+    "post_count": 48,
+    "total_likes": 2990,
+    "total_comments": 452,
+    "total_reach": 139000,
+    "average_engagement_rate": 0.0248
+  }
+}
+```
+
+## DB-only vs live refresh
+
+| Endpoint | Data source | Use when |
+|----------|-------------|----------|
+| **`GET /unified/analytics`** | Database only | Dashboards, billing reports, fast MCP tool calls |
+| **`GET /unified/posts?refresh_stats=true`** | Live platform APIs | You need freshly synced per-post metrics |
+
+<Warning>
+Analytics numbers reflect what Postsiva has **stored** from prior syncs and post activity. For the freshest per-post breakdown, use [Posts](/apis/posts) with `refresh_stats=true`, then rely on analytics for rollups.
+</Warning>
+
+## Engagement rate formula
+
+Most platforms:
+
+```
+average_engagement_rate = (total_likes + total_comments) / max(total_reach, 1)
+```
+
+Capped at `1.0`. When `total_reach` is `0`, rate is `0`. Pinterest uses platform-specific save/click semantics — see the slice `message`.
+
+## MCP equivalent
+
+| MCP tool | REST |
+|----------|------|
+| `get_unified_analytics` | `GET /unified/analytics` |
+
+Same parameters: optional `platforms`, Facebook page ids, LinkedIn org ids. Connect at `https://mcp.postsiva.com/mcp` — [MCP tools](/mcp/tools).
+
+## Related
+
+- [Posts](/apis/posts) — list posts and optionally refresh stats from platforms
+- [Comments](/apis/comments) — unified inbox on recent posts
+- [Authentication](/authentication) — plan gates for analytics

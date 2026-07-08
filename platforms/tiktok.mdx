@@ -1,0 +1,122 @@
+---
+title: TikTok
+description: Post videos and photo carousels to TikTok Business — privacy_level options and video-first workflow.
+---
+
+TikTok integration uses the **TikTok Business API**. Connect a TikTok Business account — personal creator accounts without Business access are not supported.
+
+## Connect
+
+```bash
+curl -X POST "https://backend.postsiva.com/unified/oauth/url" \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: psk_live_YOUR_KEY" \
+  -d '{"platform": ["tiktok"]}'
+```
+
+OAuth callback: `/tiktok-business/oauth/callback`. One TikTok Business account per workspace.
+
+## Post types
+
+| Type | Endpoint | Primary use |
+|------|----------|-------------|
+| Video | `POST /unified/post/video` | Short-form video (main workflow) |
+| Image | `POST /unified/post/image` | Photo posts |
+| Carousel | `POST /unified/post/carousel` | Multi-image photo posts |
+
+Text-only posts are not supported on TikTok through the unified API.
+
+## Video post (recommended)
+
+```bash
+curl -X POST "https://backend.postsiva.com/unified/post/video" \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: psk_live_YOUR_KEY" \
+  -d '{
+    "platforms": ["tiktok"],
+    "default_text": "Behind the scenes at our studio.",
+    "video_id": "your-video-media-uuid",
+    "tiktok": {
+      "privacy_level": "PUBLIC_TO_EVERYONE",
+      "disable_comment": false
+    }
+  }'
+```
+
+## privacy_level options
+
+| Value | Who can view |
+|-------|--------------|
+| `PUBLIC_TO_EVERYONE` | Default — public on TikTok |
+| `MUTUAL_FOLLOW_FRIENDS` | Mutual followers only |
+| `FOLLOWER_OF_CREATOR` | Followers only |
+| `SELF_ONLY` | Private — only you |
+
+Set via `tiktok.privacy_level` in the post body.
+
+## Caption and title limits
+
+| Field | Limit | Applies to |
+|-------|-------|------------|
+| Caption (`default_text` / `tiktok_text`) | 2,200 characters | Video and photo posts |
+| Photo title (`tiktok_title`) | 90 UTF-16 code units | Image and carousel posts only |
+
+```json
+{
+  "platforms": ["tiktok"],
+  "default_text": "Photo carousel caption.",
+  "image_ids": ["id1", "id2"],
+  "tiktok": {
+    "tiktok_title": "Summer lookbook",
+    "privacy_level": "PUBLIC_TO_EVERYONE",
+    "auto_add_music": true
+  }
+}
+```
+
+## Additional TikTok options
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `disable_comment` | boolean | Disable comments |
+| `auto_add_music` | boolean | Let TikTok add music to photo posts |
+| `brand_content_toggle` | boolean | Mark as branded content |
+| `brand_organic_toggle` | boolean | Brand organic disclosure |
+| `cover_index` | integer | Cover image index for multi-image (0-based) |
+| `video_cover_timestamp_ms` | integer | Frame timestamp for video cover |
+
+## Video focus
+
+TikTok is video-first. Recommended workflow:
+
+1. Upload video via `POST /media/upload` (or chunked upload for files ≥ 10 MB)
+2. Copy returned `media_id`
+3. Post with `video_id` and caption
+4. Optionally schedule with `scheduled_time`
+
+<Info>
+  Postsiva normalizes images to **1080×1920** (9:16) for TikTok when auto-fix is applied.
+</Info>
+
+## Multi-platform video
+
+```json
+{
+  "platforms": ["tiktok", "instagram", "youtube"],
+  "default_text": "Product demo.",
+  "video_id": "shared-video-uuid",
+  "youtube": {
+    "youtube_title": "Product Demo — Full Walkthrough",
+    "youtube_description": "See our new feature in action."
+  }
+}
+```
+
+## Common errors
+
+| Error | Cause | Fix |
+|-------|-------|-----|
+| `NOT_CONNECTED` | TikTok Business not linked | Reconnect via OAuth |
+| `422` caption | Over 2,200 characters | Shorten caption |
+| `422` photo title | Over 90 UTF-16 units | Shorten `tiktok_title` |
+| Invalid privacy | Unknown `privacy_level` value | Use enum values above |

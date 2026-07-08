@@ -1,0 +1,43 @@
+---
+title: Clients
+description: Postsiva web app, mobile app (Expo), and Chrome extension for LinkedIn repost.
+---
+
+## Web — postsiva.com
+
+Next.js app for the full product:
+
+- Dashboard, content manager, scheduler
+- Inbox, published posts, AI Watcher
+- Personas, integrations, billing, API keys, MCP settings
+- Workspaces and team
+
+## Mobile — Expo / React Native
+
+| Area | Tabs / routes |
+|------|----------------|
+| Home analytics | `(tabs)/home` |
+| Feed (published / drafts / scheduled) | `(tabs)/feed` |
+| Composer + schedule | `(tabs)/composer` |
+| Inbox | `(tabs)/inbox` |
+| Agent chat | `(tabs)/agent` |
+| Settings (billing, integrations, MCP, WhatsApp, DM) | `(tabs)/settings` |
+
+Android releases ship via Play Store `.aab`.
+
+## Chrome extension — LinkedIn repost
+
+MV3 side panel on `linkedin.com`:
+
+- Select a post → rephrase / edit
+- Publish text + images (carousel); video not supported yet
+- AI image generate / edit
+- Personal + organization posting
+- Draft creation
+- Requires `extension_enabled` (Starter+)
+
+Configure API base URL in extension options.
+
+## Shared API
+
+All clients hit `https://backend.postsiva.com` with JWT (app) or API key (automation). Canonical paths use `/unified/*`.

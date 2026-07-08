@@ -1,0 +1,121 @@
+---
+title: Facebook
+description: Post to Facebook Pages with facebook_page_ids — per-page text, images, and scheduling.
+---
+
+Facebook posting in Postsiva targets **Facebook Pages** only. Personal Facebook profiles are not supported for publishing.
+
+## Connect
+
+```bash
+curl -X POST "https://backend.postsiva.com/unified/oauth/url" \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: psk_live_YOUR_KEY" \
+  -d '{"platform": ["facebook"]}'
+```
+
+Grant Page permissions during OAuth. Postsiva stores tokens per Page.
+
+## Post types
+
+| Type | Endpoint |
+|------|----------|
+| Text | `POST /unified/post/text` |
+| Image | `POST /unified/post/image` |
+| Carousel | `POST /unified/post/carousel` |
+| Video | `POST /unified/post/video` |
+
+## facebook_page_ids (required)
+
+Every Facebook post must specify which Page(s) to publish to:
+
+```bash
+curl -X POST "https://backend.postsiva.com/unified/post/text" \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: psk_live_YOUR_KEY" \
+  -d '{
+    "platforms": ["facebook"],
+    "default_text": "Hello from our Facebook Page!",
+    "facebook": {
+      "facebook_page_ids": ["756356074224043"]
+    }
+  }'
+```
+
+Post to multiple Pages in one request:
+
+```json
+{
+  "platforms": ["facebook"],
+  "default_text": "Shared announcement across Pages.",
+  "facebook": {
+    "facebook_page_ids": ["756356074224043", "793433700521081"]
+  }
+}
+```
+
+<Tip>
+  List connected Pages and their IDs via `GET /unified/user-profiles/` or in the app under **Settings → Integrations → Facebook**.
+</Tip>
+
+## Per-page text and images
+
+When Pages need different copy or images, use maps keyed by Page ID:
+
+```json
+{
+  "platforms": ["facebook"],
+  "default_text": "Default caption for Pages not in the map.",
+  "facebook": {
+    "facebook_page_ids": ["756356074224043", "793433700521081"],
+    "facebook_page_texts": {
+      "756356074224043": "Welcome to our main brand Page!",
+      "793433700521081": "Regional update for our second Page."
+    },
+    "facebook_page_images": {
+      "756356074224043": "media-uuid-for-page-one-image"
+    }
+  }
+}
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `facebook_page_texts` | `object` | Map of `page_id → caption` |
+| `facebook_page_images` | `object` | Map of `page_id → image_id` or `image_url` |
+
+Pages not listed in `facebook_page_texts` fall back to `default_text`. Pages not in `facebook_page_images` use `default_image_id` or `default_image_url`.
+
+## Character limit
+
+Facebook Page post text supports up to **63,206 characters** — effectively no practical limit for normal posts. See [Character limits](/guides/character-limits).
+
+## Scheduling and drafts
+
+Add `scheduled_time` (ISO 8601 UTC) to any post endpoint, or use `draft: true` to save without publishing:
+
+```json
+{
+  "platforms": ["facebook"],
+  "default_text": "Scheduled Page post.",
+  "facebook": { "facebook_page_ids": ["756356074224043"] },
+  "scheduled_time": "2026-07-15T09:00:00Z"
+}
+```
+
+See [Scheduling](/guides/scheduling) and [Drafts](/guides/drafts).
+
+## Reading posts and comments
+
+| Endpoint | Use |
+|----------|-----|
+| `GET /unified/posts?platforms=facebook&page_id=PAGE_ID` | Recent Page posts |
+| `GET /unified/comments?platform=facebook&facebook_page_ids=PAGE_ID` | Page comments |
+
+## Common errors
+
+| Error | Cause | Fix |
+|-------|-------|-----|
+| `NOT_CONNECTED` | Facebook not linked | Complete OAuth |
+| Missing Page ID | No `facebook_page_ids` | Add at least one Page ID |
+| `403` | API key scope excludes Facebook | Update key scope |

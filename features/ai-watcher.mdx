@@ -1,0 +1,42 @@
+---
+title: AI Watcher & Auto-Replier
+description: Watch post comments, detect leads, and optionally auto-reply — Pro feature under /unified/ai-autoreplier.
+---
+
+**AI Watcher** monitors comments on selected posts, can flag **leads**, and can **auto-reply** in your brand voice (Pro).
+
+## What it does
+
+1. Enable watcher on a published post + platform
+2. Background jobs analyze new comments
+3. Optional: detect leads via keywords / custom rules
+4. Optional: auto-reply using persona / prompts
+5. Review leads, run history, and force a run from the app or API
+
+## Feature flags
+
+| Flag | Role |
+|------|------|
+| `ai_watcher_enabled` | Enable monitoring UI / runs |
+| `auto_replier_enabled` | Auto-replies |
+| `lead_detection_enabled` | Lead keywords + leads list |
+
+## REST prefix
+
+`/unified/ai-autoreplier` — workspace **API key** or JWT. See [AI Watcher API](/apis/ai-watcher).
+
+| Method | Path | Purpose |
+|--------|------|---------|
+| `POST` | `/enable` | Start watching a post |
+| `POST` | `/disable` | Stop watching |
+| `GET` | `/list` | Enabled posts |
+| `POST` | `/force-run` | Force run |
+| `GET` | `/history` | Run history |
+| `GET` | `/leads` | Detected leads |
+| `PATCH` | `/rules` | Lead keywords / custom rule |
+
+Full API: [AI Watcher](/apis/ai-watcher).
+
+## In the app
+
+Web: **Published / AI Watcher** — enable per post, see leads and last run.

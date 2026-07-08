@@ -1,0 +1,135 @@
+---
+title: LinkedIn
+description: Post to LinkedIn personal profiles and organization pages — linkedin_page_ids, post_to_personal, and 3000-character limit.
+---
+
+LinkedIn supports text, image, carousel, and video posts to your **personal profile** and/or **organization (company) pages**.
+
+## Connect
+
+```bash
+curl -X POST "https://backend.postsiva.com/unified/oauth/url" \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: psk_live_YOUR_KEY" \
+  -d '{"platform": ["linkedin"]}'
+```
+
+Complete OAuth at the returned `auth_url`.
+
+## Post types
+
+| Type | Endpoint | Notes |
+|------|----------|-------|
+| Text | `POST /unified/post/text` | Up to 3,000 characters |
+| Image | `POST /unified/post/image` | Single image |
+| Carousel | `POST /unified/post/carousel` | 2–20 images |
+| Video | `POST /unified/post/video` | Optional thumbnail generation |
+
+## Personal vs organization pages
+
+LinkedIn destinations are controlled with `linkedin.linkedin_page_ids` and `linkedin.post_to_personal`:
+
+| Scenario | `linkedin_page_ids` | `post_to_personal` | Result |
+|----------|---------------------|--------------------|--------|
+| Personal only | omit or `[]` | — | Posts to your profile |
+| One org page | `["108813535"]` | omitted | Posts to that org only |
+| Personal + orgs | `["108813535"]` | `true` | Profile + org page |
+| Multiple orgs | `["108813535", "109408332"]` | `false` | All listed orgs only |
+
+<Tip>
+  Get org page IDs from `GET /unified/user-profiles/` or list pages in the Postsiva app under **Settings → Integrations → LinkedIn**.
+</Tip>
+
+### Example: personal + two org pages
+
+```bash
+curl -X POST "https://backend.postsiva.com/unified/post/text" \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: psk_live_YOUR_KEY" \
+  -d '{
+    "platforms": ["linkedin"],
+    "default_text": "Company update from Postsiva API.",
+    "linkedin": {
+      "linkedin_page_ids": ["108813535", "109408332"],
+      "post_to_personal": true
+    }
+  }'
+```
+
+## Per-page text and images
+
+Use maps keyed by page/org ID when each destination needs different copy or media:
+
+```json
+{
+  "platforms": ["linkedin"],
+  "default_text": "Fallback caption for pages not in the map.",
+  "linkedin": {
+    "linkedin_page_ids": ["108813535", "109408332"],
+    "post_to_personal": false,
+    "linkedin_page_texts": {
+      "108813535": "Custom copy for Acme Corp page.",
+      "109408332": "Different copy for Beta Inc page."
+    },
+    "linkedin_page_images": {
+      "108813535": "media-uuid-for-acme-image"
+    }
+  }
+}
+```
+
+## Character limit
+
+LinkedIn text (profile and org posts) is capped at **3,000 characters**. Exceeding the limit returns `422`:
+
+```json
+{
+  "detail": "Max text character limit for linkedin is 3000. Received 3200 characters in linkedin_text/default_text."
+}
+```
+
+See [Character limits](/guides/character-limits).
+
+## Visibility
+
+Set `visibility` to `PUBLIC` (default) or `CONNECTIONS` for profile posts:
+
+```json
+{
+  "platforms": ["linkedin"],
+  "default_text": "Connections-only update.",
+  "visibility": "CONNECTIONS"
+}
+```
+
+## Reading posts (Apify refresh)
+
+`GET /unified/posts?platforms=linkedin` returns cached posts by default.
+
+| Parameter | Behavior |
+|-----------|----------|
+| `refresh_posts=false` (default) | Returns stored/cached posts — fast, no extra cost |
+| `refresh_posts=true` | Re-fetches personal profile posts via Apify |
+
+<Warning>
+  **Apify refresh is expensive.** For LinkedIn personal profiles only, use `refresh_posts=true` when the user explicitly asks to sync live posts — not for routine listing. When refresh is enabled for personal LinkedIn, `limit` is capped at **2**.
+</Warning>
+
+Organization posts (`linkedin_organization_ids` query param) are not subject to the personal Apify cap.
+
+## Video extras
+
+| Field | Purpose |
+|-------|---------|
+| `linkedin.thumbnail_image_id` | Custom video thumbnail (workspace media ID) |
+| `linkedin.generate_thumbnail_from_content` | Auto-generate thumbnail from post text |
+
+## Common errors
+
+| Error | Cause | Fix |
+|-------|-------|-----|
+| `NOT_CONNECTED` | LinkedIn not linked to workspace | Connect via OAuth |
+| `422` text limit | Caption over 3,000 chars | Trim text |
+| `403` scope | API key lacks LinkedIn in scope | Use scoped or `full` key |
+
+See [Postsiva errors](/errors/postsiva).

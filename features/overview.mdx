@@ -1,0 +1,65 @@
+---
+title: Features Overview
+description: Everything Postsiva offers — publishing, inbox, AI, agents, analytics, clients, and developer integrations.
+---
+
+Postsiva is a multi-platform social media platform with a **web app**, **mobile app**, **Chrome extension**, and a **developer API + MCP**. This section maps product features to plans and docs.
+
+## Feature map
+
+| Area | What you get | Docs |
+|------|--------------|------|
+| [Publishing](/features/publishing) | Text, image, carousel, video across networks | [Posting API](/apis/posting) |
+| [Scheduling & drafts](/features/scheduling-and-drafts) | Queue, drafts, bulk schedule | [Scheduling](/guides/scheduling), [Drafts](/guides/drafts) |
+| [Inbox & comments](/features/inbox) | Unified comments + reply | [Comments API](/apis/comments) |
+| [Analytics](/features/analytics) | Cross-platform engagement | [Analytics API](/apis/analytics) |
+| [AI content](/features/ai-content) | Idea → copy, media → caption, images | [AI Content API](/apis/ai-content) |
+| [AI Watcher & auto-replier](/features/ai-watcher) | Comment watch, leads, auto-reply | [AI Watcher API](/apis/ai-watcher) |
+| [Personas](/features/personas) | Brand voice per account/page | Web app + platform APIs |
+| [Agents](/features/agents) | Workspace agent, WhatsApp, DMs, MCP | [Agent chat](/apis/agent-chat), [MCP](/mcp/overview) |
+| [Workspaces & team](/features/workspaces-and-team) | Multi-workspace, roles, invites | [Workspaces](/workspaces) |
+| [Clients](/features/clients) | Web, mobile, Chrome extension | Below |
+
+## Supported networks (unified)
+
+Eight full publishing networks via `/unified/*`, plus **Snapchat** OAuth/profile support:
+
+<CardGroup cols={3}>
+  <Card title="LinkedIn" href="/platforms/linkedin" />
+  <Card title="Facebook" href="/platforms/facebook" />
+  <Card title="Instagram" href="/platforms/instagram" />
+  <Card title="TikTok" href="/platforms/tiktok" />
+  <Card title="YouTube" href="/platforms/youtube" />
+  <Card title="Threads" href="/platforms/threads" />
+  <Card title="Pinterest" href="/platforms/pinterest" />
+  <Card title="Bluesky" href="/platforms/bluesky" />
+  <Card title="Snapchat" href="/platforms/snapchat" />
+</CardGroup>
+
+Additional platform modules (WhatsApp messaging, ads) are documented under [Platforms](/platforms/overview).
+
+## Plans (quick view)
+
+| Capability | Free | Starter | Pro |
+|------------|:----:|:-------:|:---:|
+| Publish | ✓ | ✓ | ✓ |
+| Drafts / schedule | | ✓ | ✓ |
+| Inbox / analytics | | ✓ | ✓ |
+| Chrome extension | | ✓ | ✓ |
+| Personas / agents / API keys / MCP | | | ✓ |
+| AI Watcher / leads / auto-replier | | | ✓ |
+
+Full limits: [Plans & Features](/reference/plans).
+
+## Developer entry points
+
+| Method | When to use |
+|--------|-------------|
+| [REST API](/apis/overview) | Scripts, backends, n8n, Zapier |
+| [Unified MCP](/mcp/overview) | Cursor, Claude, AI agents |
+| [GPT Actions](/apis/gpt-actions) | ChatGPT Custom GPT |
+| [cURL recipes](/integrations/curl) | Quick tests |
+
+<Note>
+  Workspace **API keys** and **MCP** require the **Pro** plan.
+</Note>

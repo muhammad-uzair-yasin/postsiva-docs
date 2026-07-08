@@ -1,0 +1,463 @@
+---
+title: Posting parameters (complete)
+description: Full reference of every unified and per-platform field for POST /unified/post/text, image, carousel, and video — from Postsiva backend schemas.
+---
+
+This page lists **all** request body fields Postsiva accepts for unified posting. Source of truth: `unified_posting/schemas.py` and `text_post_schemas.py`.
+
+For flows and examples, see [Posting](/apis/posting). For connect → key → automate, see [Complete setup](/guides/complete-setup).
+
+## Endpoints & which platforms
+
+| Endpoint | Platforms (typical) | Media rules |
+|----------|---------------------|-------------|
+| `POST /unified/post/text` | `linkedin`, `threads`, `facebook`, `bluesky` | No media fields |
+| `POST /unified/post/image` | `linkedin`, `facebook`, `instagram`, `threads`, `tiktok`, `pinterest` | `default_image_id` **or** `default_image_url` (one required) |
+| `POST /unified/post/carousel` | `linkedin`, `facebook`, `instagram`, `threads`, `tiktok`, `pinterest` | `image_ids` length **2–20** |
+| `POST /unified/post/video` | `linkedin`, `facebook`, `instagram`, `threads`, `tiktok`, `youtube`, `pinterest`, `bluesky` | `video_id` **or** `video_url` (Pinterest requires `video_id`) |
+
+Base URL: `https://backend.postsiva.com`  
+Auth: `X-API-Key: psk_live_…` (or JWT + `X-Workspace-Id`)
+
+---
+
+## Shared / top-level fields
+
+These fields sit at the **root** of the JSON body (not inside `linkedin` / `facebook` / …).
+
+| Field | Type | Default | Used by | Description |
+|-------|------|---------|---------|-------------|
+| `platforms` | `string[]` | — | **All** (required) | Targets for this call. Min length 1. |
+| `default_text` | `string` | — | All | Shared caption / title fallback. Max **3000**. Required for **text** posts (`min_length=1`). |
+| `visibility` | `string` | `"PUBLIC"` | Especially LinkedIn | `"PUBLIC"` or `"CONNECTIONS"`. |
+| `scheduled_time` | `datetime` ISO | `null` | All | Schedule publish (UTC recommended), e.g. `2026-07-10T14:30:00Z`. |
+| `draft` | `bool` | `false` | All | If `true` and `draft_platforms` omitted → save **all** listed platforms as drafts. |
+| `draft_platforms` | `string[]` | `null` | All | Subset of `platforms` saved as draft; **others publish**. |
+| `default_image_id` | `string` UUID | `null` | Image | Media id from [Media upload](/apis/media). |
+| `default_image_url` | `string` URL | `null` | Image | Public image URL (Threads prefers media id). |
+| `linkedin_image` | `string` | `null` | Image only | Top-level LinkedIn-only image override (media id **or** URL). Prefer `linkedin.linkedin_image_id` / `linkedin_image_url`. |
+| `image_ids` | `string[]` | — | Carousel | **2–20** media UUIDs. |
+| `video_id` | `string` UUID | `null` | Video | Media id from upload. |
+| `video_url` | `string` URL | `null` | Video | Direct video URL (not both with `video_id` in usual cases). |
+| `board_id` | `string` | `null` | Pinterest | Top-level board id if `pinterest.board_id` missing. |
+| `linkedin` | object | `null` | When `"linkedin"` in platforms | See [LinkedIn overrides](#linkedin-overrides). |
+| `facebook` | object | `null` | When `"facebook"` in platforms | See [Facebook overrides](#facebook-overrides). |
+| `threads` | object | `null` | When `"threads"` in platforms | See [Threads overrides](#threads-overrides). |
+| `instagram` | object | `null` | When `"instagram"` in platforms | See [Instagram overrides](#instagram-overrides). |
+| `tiktok` | object | `null` | When `"tiktok"` in platforms | See [TikTok overrides](#tiktok-overrides). |
+| `youtube` | object | `null` | Video + `"youtube"` | See [YouTube overrides](#youtube-overrides). |
+| `pinterest` | object | `null` | When `"pinterest"` in platforms | See [Pinterest overrides](#pinterest-overrides). |
+
+### Draft / schedule behavior
+
+| Intent | Set |
+|--------|-----|
+| Publish now | `draft: false`, no `scheduled_time` |
+| Schedule | `scheduled_time` ISO string |
+| All drafts | `draft: true` |
+| Mix draft + publish | `draft_platforms: ["linkedin"]` while `platforms` includes more |
+
+---
+
+## LinkedIn overrides
+
+Object key: **`linkedin`**. Class: `LinkedInPostOverrides` / `LinkedInTextPostOverrides` (text has no media fields).
+
+| Field | Type | Max / values | Description |
+|-------|------|--------------|-------------|
+| `linkedin_text` | `string` | 3000 | Caption for **personal** profile; fallback for pages not listed in `linkedin_page_texts`. |
+| `linkedin_image_id` | `string` | — | Image media id for LinkedIn only (overrides `default_image_id`). |
+| `linkedin_image_url` | `string` | — | Image URL for LinkedIn only. |
+| `linkedin_page_ids` | `string[]` | — | Org / company page IDs. Omit → **personal only**. |
+| `post_to_personal` | `bool` | default `true` in schema | When page ids set: if omitted in client → backend treats as **pages only**; `true` = personal **+** pages; `false` = pages only. |
+| `linkedin_page_texts` | `object` map | page_id → string | Different caption per page. |
+| `linkedin_page_images` | `object` map | page_id → image_id or URL | Different image per page. |
+| `visibility` | `string` | `PUBLIC` \| `CONNECTIONS` | Overrides top-level `visibility`. |
+| `scheduled_time` | `datetime` | — | Platform-level schedule override. |
+| `image_id` / `image_url` | `string` | — | Legacy aliases also accepted in merge. |
+| `image_ids` | `string[]` | — | Carousel override for LinkedIn. |
+| `video_id` / `video_url` | `string` | — | Video override for LinkedIn. |
+| `thumbnail_image_id` | `string` | — | Workspace media id used as LinkedIn **video** thumbnail. |
+| `generate_thumbnail_from_content` | `bool` | — | Generate thumbnail from text and apply on uploaded video. |
+
+### LinkedIn examples
+
+**Personal only**
+
+```json
+{
+  "platforms": ["linkedin"],
+  "default_text": "Hello LinkedIn"
+}
+```
+
+**One org page only**
+
+```json
+{
+  "platforms": ["linkedin"],
+  "default_text": "Company update",
+  "linkedin": {
+    "linkedin_page_ids": ["12345"],
+    "post_to_personal": false
+  }
+}
+```
+
+**Personal + two pages, different page captions**
+
+```json
+{
+  "platforms": ["linkedin"],
+  "default_text": "Fallback",
+  "linkedin": {
+    "linkedin_text": "Personal caption",
+    "linkedin_page_ids": ["12345", "67890"],
+    "post_to_personal": true,
+    "linkedin_page_texts": {
+      "12345": "Caption for org 12345",
+      "67890": "Caption for org 67890"
+    },
+    "visibility": "PUBLIC"
+  }
+}
+```
+
+**Image with per-page images**
+
+```json
+{
+  "platforms": ["linkedin"],
+  "default_image_id": "default-media-uuid",
+  "default_text": "Default caption",
+  "linkedin": {
+    "linkedin_page_ids": ["12345", "67890"],
+    "post_to_personal": false,
+    "linkedin_page_texts": {
+      "12345": "Page A caption",
+      "67890": "Page B caption"
+    },
+    "linkedin_page_images": {
+      "12345": "image-uuid-a",
+      "67890": "https://cdn.example.com/b.jpg"
+    }
+  }
+}
+```
+
+---
+
+## Facebook overrides
+
+Object key: **`facebook`**. Facebook posts target **Pages only** (no personal feed in this API).
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `facebook_page_ids` | `string[]` | **Required** when posting to Facebook. One or more Page IDs. |
+| `facebook_page_texts` | `object` map | page_id → caption. Pages missing from map use `default_text`. |
+| `facebook_page_images` | `object` map | page_id → image_id or URL (image posts). |
+| `scheduled_time` | `datetime` | Optional schedule override. |
+
+### Facebook examples
+
+**One page**
+
+```json
+{
+  "platforms": ["facebook"],
+  "default_text": "Hello on Facebook",
+  "facebook": { "facebook_page_ids": ["756356074224043"] }
+}
+```
+
+**Multi page + per-page text**
+
+```json
+{
+  "platforms": ["facebook"],
+  "default_text": "Fallback",
+  "facebook": {
+    "facebook_page_ids": ["PAGE_1", "PAGE_2"],
+    "facebook_page_texts": {
+      "PAGE_1": "Text for page 1",
+      "PAGE_2": "Text for page 2"
+    }
+  }
+}
+```
+
+**Image with per-page images**
+
+```json
+{
+  "platforms": ["facebook"],
+  "default_image_id": "MEDIA_UUID",
+  "default_text": "Shared caption",
+  "facebook": {
+    "facebook_page_ids": ["PAGE_1", "PAGE_2"],
+    "facebook_page_images": {
+      "PAGE_1": "image-uuid-for-page-1",
+      "PAGE_2": "https://cdn.example.com/page2.jpg"
+    }
+  }
+}
+```
+
+---
+
+## Instagram overrides
+
+Object key: **`instagram`**. Usually one Instagram business account per workspace.
+
+| Field | Type | Max | Description |
+|-------|------|-----|-------------|
+| `instagram_text` | `string` | 2200 | Caption override. |
+| `instagram_image_id` | `string` | — | Image media id override. |
+| `instagram_image_url` | `string` | — | Image URL override. |
+| `scheduled_time` | `datetime` | — | Schedule override. |
+
+```json
+{
+  "platforms": ["instagram"],
+  "default_image_id": "MEDIA_UUID",
+  "default_text": "Default",
+  "instagram": {
+    "instagram_text": "IG-only caption",
+    "instagram_image_id": "ig-only-media-uuid"
+  }
+}
+```
+
+---
+
+## Threads overrides
+
+Object key: **`threads`**. Text max **500**. Image posts prefer **media id**.
+
+| Field | Type | Max | Description |
+|-------|------|-----|-------------|
+| `threads_text` | `string` | 500 | Caption / text override (required min length 1 when set). |
+| `threads_image_id` | `string` | — | Media id (required for reliable image posts). |
+| `threads_image_url` | `string` | — | Documented but Threads API expects media id — prefer `threads_image_id`. |
+
+```json
+{
+  "platforms": ["threads"],
+  "default_text": "Short Threads post",
+  "threads": { "threads_text": "Threads-only ≤500 chars" }
+}
+```
+
+---
+
+## TikTok overrides
+
+Object key: **`tiktok`**. TikTok Business posting options.
+
+| Field | Type | Values / max | Description |
+|-------|------|--------------|-------------|
+| `tiktok_text` | `string` | — | Caption override. |
+| `tiktok_title` | `string` | 90 UTF-16 units | **Photo / carousel** title for Business API (not used for video). |
+| `tiktok_image_id` | `string` | — | Image media id override. |
+| `tiktok_image_url` | `string` | — | Image URL override. |
+| `scheduled_time` | `datetime` | — | Schedule override. |
+| `privacy_level` | `string` | `PUBLIC_TO_EVERYONE` \| `MUTUAL_FOLLOW_FRIENDS` \| `FOLLOWER_OF_CREATOR` \| `SELF_ONLY` | Audience. |
+| `disable_comment` | `bool` | — | Disable comments. |
+| `auto_add_music` | `bool` | — | Let TikTok add music. |
+| `brand_content_toggle` | `bool` | — | Mark as brand / paid partnership content. |
+| `brand_organic_toggle` | `bool` | — | Brand organic toggle. |
+| `cover_index` | `int` | 0-based | Cover frame index for multi-image. |
+
+```json
+{
+  "platforms": ["tiktok"],
+  "default_image_id": "MEDIA_UUID",
+  "default_text": "Fallback caption",
+  "tiktok": {
+    "tiktok_text": "TikTok caption",
+    "tiktok_title": "Photo post title",
+    "privacy_level": "PUBLIC_TO_EVERYONE",
+    "disable_comment": false,
+    "auto_add_music": false,
+    "brand_content_toggle": false,
+    "brand_organic_toggle": false,
+    "cover_index": 0
+  }
+}
+```
+
+---
+
+## YouTube overrides
+
+Object key: **`youtube`**. Used on **video** posts. A title is required — set `default_text` and/or `youtube_title`.
+
+| Field | Type | Max | Description |
+|-------|------|-----|-------------|
+| `youtube_title` | `string` | 200 | Title (overrides `default_text` for YouTube). |
+| `youtube_description` | `string` | — | Description. |
+| `youtube_playlist_id` | `string` | — | Add video to this playlist after upload. |
+| `thumbnail_image_id` | `string` | — | Custom thumbnail media id (best for 16:9 long-form, not Shorts). |
+| `generate_thumbnail_from_content` | `bool` | — | Generate thumbnail from title/description then set as custom thumbnail. |
+
+```json
+{
+  "platforms": ["youtube"],
+  "video_id": "VIDEO_MEDIA_UUID",
+  "default_text": "Fallback title",
+  "youtube": {
+    "youtube_title": "My YouTube Video Title",
+    "youtube_description": "Optional description",
+    "youtube_playlist_id": "PLAYLIST_ID",
+    "thumbnail_image_id": "THUMB_MEDIA_UUID",
+    "generate_thumbnail_from_content": false
+  }
+}
+```
+
+---
+
+## Pinterest overrides
+
+Object key: **`pinterest`**. **`board_id` is required** (or top-level `board_id` / alias `pinterestBoardId`).
+
+| Field | Type | Max | Description |
+|-------|------|-----|-------------|
+| `board_id` | `string` | — | **Required** board ID. |
+| `pinterestBoardId` | `string` | alias | CamelCase alias for `board_id`. |
+| `pinterest_text` | `string` | 100 | Pin **title**. |
+| `pinterest_description` | `string` | — | Pin description (falls back to `default_text` when merging). |
+| `pinterest_image_id` | `string` | — | Image media id for pin. Pinterest uses media IDs (not only URLs). |
+| `scheduled_time` | `datetime` | — | Schedule override. |
+
+Also valid at root: `board_id` or sometimes `pinterestBoardId` on carousel/image examples in legacy curl fixtures.
+
+```json
+{
+  "platforms": ["pinterest"],
+  "default_image_id": "MEDIA_UUID",
+  "default_text": "Default description",
+  "pinterest": {
+    "board_id": "YOUR_PINTEREST_BOARD_ID",
+    "pinterest_text": "Pin title",
+    "pinterest_description": "Longer pin description",
+    "pinterest_image_id": "MEDIA_UUID"
+  }
+}
+```
+
+---
+
+## Bluesky
+
+Text posts include `"bluesky"` in `platforms` for `POST /unified/post/text`. Video may use `"bluesky"` / `"blue_sky"` depending on path (see [Bluesky](/platforms/bluesky)). Character limit **300**. Connect with handle + app password — no page override object today (use `default_text`).
+
+```json
+{
+  "platforms": ["bluesky"],
+  "default_text": "Short Bluesky post ≤300 chars"
+}
+```
+
+---
+
+## Multi-platform root body (all overrides together)
+
+```json
+{
+  "platforms": ["linkedin", "facebook", "instagram", "threads", "tiktok"],
+  "default_text": "Same idea everywhere",
+  "default_image_id": "SHARED_MEDIA_UUID",
+  "visibility": "PUBLIC",
+  "draft": false,
+  "scheduled_time": null,
+  "linkedin": {
+    "linkedin_text": "LinkedIn-specific",
+    "linkedin_page_ids": ["12345"],
+    "post_to_personal": true,
+    "visibility": "PUBLIC"
+  },
+  "facebook": {
+    "facebook_page_ids": ["PAGE_ID"],
+    "facebook_page_texts": { "PAGE_ID": "FB-specific" }
+  },
+  "instagram": { "instagram_text": "IG-specific ≤2200" },
+  "threads": { "threads_text": "Threads ≤500" },
+  "tiktok": {
+    "tiktok_text": "TikTok caption",
+    "privacy_level": "PUBLIC_TO_EVERYONE"
+  }
+}
+```
+
+---
+
+## Response shapes
+
+**Single platform success**
+
+```json
+{
+  "success": true,
+  "message": "OK",
+  "post": {},
+  "error": null
+}
+```
+
+**Multi platform**
+
+```json
+{
+  "results": [
+    { "platform": "linkedin", "success": true, "message": "OK", "post": {}, "error": null },
+    { "platform": "facebook", "success": false, "message": "...", "post": null, "error": "..." }
+  ]
+}
+```
+
+**Draft only**
+
+```json
+{
+  "success": true,
+  "message": "Saved as draft",
+  "draft": { "id": "uuid", "platform": "linkedin", "status": "draft" }
+}
+```
+
+**Mix draft + publish** (`draft_platforms`)
+
+```json
+{
+  "success": true,
+  "message": "Drafts and posts completed",
+  "drafts": [{ "platform": "linkedin", "draft": { "id": "uuid" } }],
+  "results": [{ "platform": "threads", "success": true, "message": "Post created", "post": {} }]
+}
+```
+
+---
+
+## MCP `publish` mapping
+
+| MCP `publish` arg | REST equivalent |
+|-------------------|-----------------|
+| `post_type` | Chooses `/text`, `/image`, or `/video` |
+| `platforms` | `platforms` |
+| `default_text` | `default_text` |
+| `default_image_id` / `default_image_url` | same |
+| `video_id` / `video_url` | same |
+| `draft` | `draft` |
+| `scheduled_time` | `scheduled_time` |
+| `scope` `feed` \| `pages` | Affects personal vs page targeting |
+| `platform_overrides_json` | JSON string of `linkedin` / `facebook` / … objects above |
+
+---
+
+## Related
+
+- [Posting overview](/apis/posting) — endpoint guides
+- [Complete setup](/guides/complete-setup) — UI + connect + API key
+- [Character limits](/guides/character-limits)
+- [Media](/apis/media) — obtain `media_id`

@@ -1,0 +1,312 @@
+---
+title: Workspace Agent Chat
+description: Run the full Postsiva LangGraph agent over HTTP — same tools as WhatsApp and MCP, with chat history APIs.
+---
+
+The workspace agent is Postsiva's **conversational interface** to social management. One turn can list accounts, generate content, publish posts, read analytics, reply to comments, and more — the agent picks tools automatically.
+
+The website chat endpoint uses the **same LangGraph agent** as WhatsApp, Instagram DM, and Facebook Messenger, with `channel=website`.
+
+## Authentication
+
+| Method | Headers |
+|--------|---------|
+| **API key** (recommended) | `X-API-Key: psk_live_YOUR_KEY` |
+| **JWT session** | `Authorization: Bearer YOUR_JWT` + `X-Workspace-Id: YOUR_WORKSPACE_UUID` |
+
+With an API key, workspace is inferred from the key. Optional `workspace_id` in the request body must match the authenticated workspace.
+
+<Note>
+  Agent turns consume **AI credits** (`agent_turn` = 2 credits, plus per-tool costs). Requires a plan with agent access (Pro for WhatsApp; website chat follows workspace AI composer limits).
+</Note>
+
+---
+
+## Send a message
+
+### `POST /workspace-agent/website/chat`
+
+Run one agent turn. Provide at least one of: `text`, `image_url`, `video_url`, `image_media_id`, `video_media_id`.
+
+**Request body**
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `text` | string | No* | User message |
+| `image_url` | string | No* | Public HTTPS image URL |
+| `video_url` | string | No* | Public HTTPS video URL |
+| `image_media_id` | UUID | No* | Postsiva unified media ID (image from media library) |
+| `video_media_id` | UUID | No* | Postsiva unified media ID (video) |
+| `workspace_id` | UUID | No | Must match authenticated workspace if sent |
+
+\* At least one field must be non-empty.
+
+<CodeGroup>
+
+```bash cURL
+curl -X POST "https://backend.postsiva.com/workspace-agent/website/chat" \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: psk_live_YOUR_KEY" \
+  -d '{"text": "What social accounts are connected to my workspace?"}'
+```
+
+```javascript JavaScript
+const res = await fetch("https://backend.postsiva.com/workspace-agent/website/chat", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    "X-API-Key": "psk_live_YOUR_KEY",
+  },
+  body: JSON.stringify({
+    text: "Draft a LinkedIn post about our Q2 results and schedule it for tomorrow at 9am UTC",
+  }),
+});
+const { parsed } = await res.json();
+console.log(parsed.response);
+```
+
+```python Python
+import requests
+
+r = requests.post(
+    "https://backend.postsiva.com/workspace-agent/website/chat",
+    headers={"X-API-Key": "psk_live_YOUR_KEY"},
+    json={"text": "Show my last 5 LinkedIn posts and total engagement this month"},
+)
+data = r.json()
+print(data["parsed"]["response"])
+```
+
+</CodeGroup>
+
+**With media**
+
+<CodeGroup>
+
+```bash cURL
+curl -X POST "https://backend.postsiva.com/workspace-agent/website/chat" \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: psk_live_YOUR_KEY" \
+  -d '{
+    "text": "Write an Instagram caption for this photo and save as draft",
+    "image_url": "https://cdn.example.com/launch.jpg"
+  }'
+```
+
+```bash cURL (media library)
+curl -X POST "https://backend.postsiva.com/workspace-agent/website/chat" \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: psk_live_YOUR_KEY" \
+  -d '{
+    "text": "Post this video to TikTok as a draft",
+    "video_media_id": "286fa0a8-0a35-4cd4-a43d-2f7cd61b6242"
+  }'
+```
+
+</CodeGroup>
+
+**Response example**
+
+```json
+{
+  "success": true,
+  "agent_response_json": "{\"response\": \"You have LinkedIn and Instagram connected.\", \"append_footer\": false}",
+  "parsed": {
+    "response": "You have LinkedIn and Instagram connected.",
+    "tables_markdown": null,
+    "charts_markdown": null,
+    "mermaid_diagrams": null,
+    "image_urls": [],
+    "video_urls": [],
+    "append_footer": false
+  }
+}
+```
+
+<ResponseField name="parsed" type="object">
+  Convenience parse of `agent_response_json`. Primary field is `response` (markdown-friendly text). Optional: `tables_markdown`, `charts_markdown`, `mermaid_diagrams`, `image_urls`, `video_urls`, `append_footer`.
+</ResponseField>
+
+### Agent tools
+
+The agent has access to the same tool layer as MCP (minus `web_search_duckduckgo` on some channels):
+
+| Tool | Capability |
+|------|------------|
+| `get_accounts` | List connected platforms or load one profile |
+| `get_queued_posts` | Scheduled posts and drafts |
+| `get_user_posts` | Recent posts per platform |
+| `get_unified_analytics` | Cross-platform analytics |
+| `get_comments` | Comments on recent posts |
+| `reply_to_comment` | Reply to a comment thread |
+| `manage_platform_connection` | OAuth connect/disconnect |
+| `idea_to_content` | Idea → post copy |
+| `content_to_image` | Copy → images |
+| `media_to_content` | Image/video URL → captions |
+| `analyze_media` | Describe image/video URL |
+| `publish` | Publish, draft, or schedule |
+| `clear_workspace_chat_history` | Clear agent memory (WhatsApp/website; not on MCP) |
+
+See the full [MCP tool catalog](/mcp/tools) for argument details.
+
+---
+
+## List chat history
+
+### `GET /user-agent-chats`
+
+Returns archived user/assistant turns stored in `user_agent_chats`. Newest first.
+
+**Query parameters**
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `channel` | string | — | Filter by surface: `whatsapp`, `instagram_dm`, `facebook_messenger`, `website`, `mobile` |
+| `since` | ISO 8601 | — | Include turns with `created_at >= since` |
+| `until` | ISO 8601 | — | Include turns with `created_at <= until` |
+| `limit` | integer | `20` | Page size (1–100) |
+| `offset` | integer | `0` | Pagination offset |
+
+<CodeGroup>
+
+```bash cURL
+curl -G "https://backend.postsiva.com/user-agent-chats" \
+  -H "X-API-Key: psk_live_YOUR_KEY" \
+  --data-urlencode "channel=website" \
+  --data-urlencode "limit=20" \
+  --data-urlencode "offset=0"
+```
+
+```javascript JavaScript
+const params = new URLSearchParams({ channel: "website", limit: "20", offset: "0" });
+const res = await fetch(`https://backend.postsiva.com/user-agent-chats?${params}`, {
+  headers: { "X-API-Key": "psk_live_YOUR_KEY" },
+});
+```
+
+```python Python
+requests.get(
+    "https://backend.postsiva.com/user-agent-chats",
+    headers={"X-API-Key": "psk_live_YOUR_KEY"},
+    params={"channel": "website", "limit": 20, "offset": 0},
+)
+```
+
+</CodeGroup>
+
+**Response example**
+
+```json
+{
+  "success": true,
+  "items": [
+    {
+      "id": 42,
+      "workspace_id": "aaa01a56-e769-44a6-87bf-cf6dfb9e7a27",
+      "created_at": "2026-04-04T12:00:00",
+      "turn": {
+        "channel": "website",
+        "user": {
+          "text": "Text:\nWhat accounts are connected?",
+          "at": "2026-04-04T11:59:58.123456+00:00"
+        },
+        "assistant": {
+          "text": "You have LinkedIn and Instagram connected.",
+          "raw": "{\"response\": \"You have LinkedIn and Instagram connected.\"}",
+          "at": "2026-04-04T12:00:01.000000+00:00"
+        }
+      }
+    }
+  ],
+  "total": 150,
+  "limit": 20,
+  "offset": 0
+}
+```
+
+<ResponseField name="total" type="integer">
+  Count of rows matching filters (ignores `limit`/`offset`).
+</ResponseField>
+
+---
+
+## Clear chat history
+
+### `DELETE /user-agent-chats`
+
+Deletes **all** archived turns for the workspace (every channel) and clears LangGraph thread memory. Equivalent to asking the agent to run **`clear_workspace_chat_history`**.
+
+<CodeGroup>
+
+```bash cURL
+curl -X DELETE "https://backend.postsiva.com/user-agent-chats" \
+  -H "X-API-Key: psk_live_YOUR_KEY"
+```
+
+```javascript JavaScript
+await fetch("https://backend.postsiva.com/user-agent-chats", {
+  method: "DELETE",
+  headers: { "X-API-Key": "psk_live_YOUR_KEY" },
+});
+```
+
+```python Python
+requests.delete(
+    "https://backend.postsiva.com/user-agent-chats",
+    headers={"X-API-Key": "psk_live_YOUR_KEY"},
+)
+```
+
+</CodeGroup>
+
+**Response example**
+
+```json
+{
+  "success": true,
+  "deleted_archived_turns": 42
+}
+```
+
+<Warning>
+  This is destructive and cannot be undone. The agent will not remember prior turns on the next message.
+</Warning>
+
+---
+
+## Voice transcription (optional)
+
+### `POST /workspace-agent/website/transcribe`
+
+Upload audio (e.g. `audio/webm`) to get a text transcript. Send the transcript as `text` in `/chat`. Requires server-side Pollinations configuration.
+
+---
+
+## Errors
+
+| Status | Meaning |
+|--------|---------|
+| `401` | Invalid or revoked API key / JWT |
+| `403` | `workspace_id` body mismatch |
+| `422` | No text or media fields in body |
+| `500` | Agent invocation failed |
+| `502` | Agent returned empty response |
+
+---
+
+## REST vs MCP vs agent chat
+
+| | Agent chat | MCP | REST |
+|---|------------|-----|------|
+| **Caller** | Your app with natural language | External AI agent | Your code |
+| **Tool selection** | Agent decides | Client agent decides | You call endpoints |
+| **Memory** | Per-workspace thread | Stateless | Stateless |
+| **Best for** | Embedded chat UI, copilots | Cursor, n8n AI Agent | Deterministic pipelines |
+
+## Next
+
+<CardGroup cols={2}>
+  <Card title="MCP overview" href="/mcp/overview">Connect Cursor or n8n</Card>
+  <Card title="AI content APIs" href="/apis/ai-content">Direct generate endpoints</Card>
+  <Card title="GPT Actions" href="/apis/gpt-actions">ChatGPT Custom GPT setup</Card>
+</CardGroup>

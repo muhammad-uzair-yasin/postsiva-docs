@@ -1,0 +1,100 @@
+---
+title: Connect to MCP
+description: Transport, endpoint, and authentication for the Postsiva Unified MCP server.
+---
+
+Connect any MCP client that supports **Streamable HTTP** to Postsiva.
+
+## Endpoint
+
+```
+https://mcp.postsiva.com/mcp
+```
+
+Stateless — no session between calls.
+
+## Authentication
+
+**Required:** workspace API key
+
+| Method | Example |
+|--------|---------|
+| Header | `X-API-Key: psk_live_YOUR_KEY` |
+| Query param | `https://mcp.postsiva.com/mcp?apikey=psk_live_YOUR_KEY` |
+
+The key must belong to a workspace on the **Pro** plan with MCP enabled.
+
+### Errors
+
+Missing or invalid key → tool result with error message (e.g. *"API key required"* or *"Invalid or expired API key"*).
+
+Wrong plan → upgrade message referencing postsiva.com.
+
+## Cursor
+
+1. **Cursor Settings → MCP → Add server**
+2. Type: **HTTP** (Streamable HTTP)
+3. URL: `https://mcp.postsiva.com/mcp`
+4. Headers: `X-API-Key` = your `psk_live_…` key
+5. Restart Cursor or reload MCP
+
+Or in `~/.cursor/mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "Postsiva": {
+      "url": "https://mcp.postsiva.com/mcp",
+      "headers": {
+        "X-API-Key": "psk_live_YOUR_KEY"
+      }
+    }
+  }
+}
+```
+
+## Claude Code
+
+```bash
+claude mcp add --transport http postsiva https://mcp.postsiva.com/mcp \
+  --header "X-API-Key: psk_live_YOUR_KEY"
+```
+
+Restart the client after changing keys.
+
+## Claude Desktop
+
+Add to MCP config (format varies by version):
+
+```json
+{
+  "mcpServers": {
+    "postsiva": {
+      "url": "https://mcp.postsiva.com/mcp",
+      "headers": {
+        "X-API-Key": "psk_live_YOUR_KEY"
+      }
+    }
+  }
+}
+```
+
+## Verify connection
+
+Ask the agent:
+
+> What social accounts are connected to my workspace?
+
+It should call `get_accounts` and list linked platforms.
+
+## Security
+
+- Do not commit keys to repos shared publicly
+- Use scoped keys when possible
+- Revoke keys from Settings → API Keys if compromised
+
+## Next
+
+- [Tool catalog](/mcp/tools) — all available tools
+- [Cursor guide](/mcp/cursor) — common workflows
+- [Authentication](/authentication) — scopes and plans

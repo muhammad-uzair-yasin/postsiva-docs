@@ -1,0 +1,238 @@
+---
+title: Posts
+description: Fetch recent posts and engagement stats per connected platform with optional live refresh.
+---
+
+Return up to **50 recent posts or videos per platform** for the current workspace. Data is unified into the same post shape across LinkedIn, Facebook, Instagram, TikTok, YouTube, Threads, Pinterest, and Bluesky.
+
+## Base URL & auth
+
+```
+https://backend.postsiva.com
+```
+
+<CodeGroup>
+
+```bash cURL
+curl "https://backend.postsiva.com/unified/posts?limit=10&stats=true" \
+  -H "X-API-Key: psk_live_YOUR_KEY"
+```
+
+```javascript JavaScript
+const params = new URLSearchParams({ limit: "10", stats: "true" });
+const res = await fetch(`https://backend.postsiva.com/unified/posts?${params}`, {
+  headers: { "X-API-Key": "psk_live_YOUR_KEY" },
+});
+const data = await res.json();
+```
+
+```python Python
+import requests
+
+r = requests.get(
+    "https://backend.postsiva.com/unified/posts",
+    headers={"X-API-Key": "psk_live_YOUR_KEY"},
+    params={"limit": 10, "stats": True},
+)
+posts = r.json()
+```
+
+</CodeGroup>
+
+| Header | Required | Notes |
+|--------|----------|-------|
+| `X-API-Key` | Yes (or Bearer) | Workspace from key. See [Authentication](/authentication). |
+| `X-Workspace-Id` | JWT only | Required with JWT login |
+
+<Note>
+Omit `platforms` to return slices for all **connected** accounts (token-presence scan, plus Threads). Unsupported platform names return `400`.
+</Note>
+
+## GET /unified/posts
+
+### Query parameters
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `limit` | `integer` | `10` | Posts per platform, **1–50** |
+| `stats` | `boolean` | `true` | Include per-post engagement where supported (LinkedIn stats API, etc.) |
+| `refresh_posts` | `boolean` | `false` | Pull latest post/media lists from platform APIs where supported |
+| `refresh_stats` | `boolean` | `false` | Refresh per-post insights/stats where supported |
+| `platforms` | `string[]` | all connected | Filter: `linkedin`, `facebook`, `instagram`, `tiktok`, `youtube`, `threads`, `pinterest`, `bluesky` |
+| `facebook_page_ids` | `string[]` | — | Only fetch/return posts from these Facebook Page IDs |
+| `linkedin_organization_ids` | `string[]` | — | Include org/page posts for these LinkedIn organization IDs (URN or numeric) |
+| `board_id` | `string` | — | Pinterest board id — fetch pins only from this board |
+
+Repeat array params in query strings: `?platforms=linkedin&platforms=facebook`.
+
+### Example — filter platforms and refresh
+
+<CodeGroup>
+
+```bash cURL
+curl -G "https://backend.postsiva.com/unified/posts" \
+  -H "X-API-Key: psk_live_YOUR_KEY" \
+  --data-urlencode "limit=20" \
+  --data-urlencode "refresh_posts=true" \
+  --data-urlencode "platforms=linkedin" \
+  --data-urlencode "platforms=instagram" \
+  --data-urlencode "linkedin_organization_ids=10987654321"
+```
+
+```javascript JavaScript
+const url = new URL("https://backend.postsiva.com/unified/posts");
+url.searchParams.append("limit", "20");
+url.searchParams.append("refresh_posts", "true");
+["linkedin", "instagram"].forEach((p) => url.searchParams.append("platforms", p));
+url.searchParams.append("linkedin_organization_ids", "10987654321");
+
+const data = await fetch(url, {
+  headers: { "X-API-Key": process.env.POSTSIVA_KEY },
+}).then((r) => r.json());
+```
+
+```python Python
+import requests
+
+requests.get(
+    "https://backend.postsiva.com/unified/posts",
+    headers={"X-API-Key": "psk_live_YOUR_KEY"},
+    params={
+        "limit": 20,
+        "refresh_posts": True,
+        "platforms": ["linkedin", "instagram"],
+        "linkedin_organization_ids": ["10987654321"],
+    },
+).json()
+```
+
+</CodeGroup>
+
+## Response structure
+
+Top-level fields:
+
+| Field | Description |
+|-------|-------------|
+| `success` | `true` on success |
+| `message` | Optional human-readable summary |
+| `source` | e.g. `fetched` — connection flags match [GET /unified/oauth/token](/apis/oauth) |
+| `last_updated` | Newest platform refresh timestamp (ISO) |
+
+Each connected platform appears as a **slice** key: `linkedin`, `facebook`, `instagram`, `tiktok`, `youtube`, `threads`, `pinterest`, `bluesky`.
+
+### Platform slice
+
+| Field | Description |
+|-------|-------------|
+| `posts` | Array of unified post objects |
+| `source` | `redis_cache`, `database`, or `api` |
+| `last_updated` | ISO timestamp for this platform |
+| `message` | Optional status from platform service |
+| `error` | Set when fetch failed for this platform |
+| `platform_meta` | Extra platform-specific data (e.g. Facebook pages list) |
+
+### Unified post object
+
+Every platform returns the same shape:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `post_id` | `string` | Platform-native post or video id |
+| `commentary` | `string` | Caption, message, or description |
+| `published_at` | `string` | ISO publish time |
+| `type` | `string` | `image`, `video`, `text`, or `carousel` |
+| `images` | `object[]` | `{ url, width?, height? }` |
+| `videos` | `object` | `{ videoUrl, thumbnailUrl }` or null |
+| `permalink` | `string` | Public link to the post |
+| `like_count` | `integer` | Likes/reactions (0 if unavailable) |
+| `comment_count` | `integer` | Comments/replies |
+| `share_count` | `integer` | Shares |
+| `impression_count` | `integer` | Impressions/views |
+| `source_page_id` | `string` | Facebook page or LinkedIn org id when relevant |
+| `ai_watcher_enabled` | `boolean` | AI comment watcher enabled for this post |
+
+### Example response
+
+```json
+{
+  "success": true,
+  "source": "fetched",
+  "last_updated": "2026-07-08T12:00:00Z",
+  "linkedin": {
+    "posts": [
+      {
+        "post_id": "urn:li:share:7123456789012345678",
+        "commentary": "Launch day thread 🚀",
+        "published_at": "2026-07-01T09:00:00Z",
+        "type": "text",
+        "images": [],
+        "videos": null,
+        "permalink": "https://www.linkedin.com/feed/update/...",
+        "like_count": 42,
+        "comment_count": 5,
+        "share_count": 3,
+        "impression_count": 1200,
+        "source_page_id": null,
+        "ai_watcher_enabled": false
+      }
+    ],
+    "source": "database",
+    "last_updated": "2026-07-08T11:55:00Z"
+  },
+  "instagram": {
+    "posts": [],
+    "source": "api",
+    "message": "Refreshed from Instagram Graph API"
+  }
+}
+```
+
+## GET /unified/posts/{post_id}
+
+Fetch a **single post** with force refresh. Requires query params:
+
+| Parameter | Required | Description |
+|-----------|----------|-------------|
+| `platform` | Yes | Platform name |
+| `organization_id` | LinkedIn org posts | LinkedIn organization id |
+| `page_id` | Facebook page posts | Facebook page id |
+
+## API key scope: `linkedin_posts`
+
+<Warning>
+Keys with scope **`linkedin_posts`** are **read-only** and restricted to `GET /unified/posts` (LinkedIn data only). They cannot call [posting](/apis/posting), [OAuth](/apis/oauth), or other write endpoints.
+</Warning>
+
+Use this scope for analytics dashboards or reporting integrations that only need post history. See [Authentication](/authentication) for all scope values.
+
+## Refresh behavior
+
+| Flag | Effect |
+|------|--------|
+| `refresh_posts=false` | Prefer cached/DB lists (faster) |
+| `refresh_posts=true` | Call platform APIs to update post lists where supported |
+| `refresh_stats=true` | Refresh per-post metrics (may use DB-backed posts as input) |
+
+<Note>
+When `platforms=["linkedin"]` with **no** org ids and `refresh_posts=true`, live LinkedIn personal refresh is expensive (Apify) and **`limit` is capped at 2**. Prefer cached data unless you explicitly need a live sync.
+</Note>
+
+TikTok video metrics are included on each video from the Business API; the `stats` flag does not strip TikTok like/comment/view fields.
+
+## MCP equivalent
+
+| MCP tool | REST |
+|----------|------|
+| `get_user_posts` | `GET /unified/posts` |
+
+Same query semantics: `limit`, `refresh_posts`, `refresh_stats`, `platforms`, Facebook page ids, LinkedIn org ids.
+
+Connect at `https://mcp.postsiva.com/mcp` — see [MCP tools](/mcp/tools).
+
+## Related
+
+- [Analytics](/apis/analytics) — workspace totals from stored metrics (no live API fan-out)
+- [Comments](/apis/comments) — comments on recent posts
+- [Posting](/apis/posting) — create new posts
+- [OAuth](/apis/oauth) — connection status drives which platforms appear

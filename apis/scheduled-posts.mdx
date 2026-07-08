@@ -1,0 +1,53 @@
+---
+title: Scheduled Posts
+description: Create, list, update, delete, publish-now, and move-to-draft for /unified/scheduled-posts.
+---
+
+Manage the workspace posting queue. Auth: `X-API-Key` or JWT + `X-Workspace-Id`. Requires `scheduling_enabled`.
+
+## Endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `POST` | `/unified/scheduled-posts` | Schedule-only create (`scheduled_time` required) |
+| `GET` | `/unified/scheduled-posts` | List queue |
+| `PATCH` | `/unified/scheduled-posts/{id}` | Update |
+| `DELETE` | `/unified/scheduled-posts/{id}` | Cancel / delete |
+| `POST` | `/unified/scheduled-posts/{id}/publish-now` | Publish immediately |
+| `POST` | `/unified/scheduled-posts/{id}/move-to-draft` | Convert to draft |
+
+## Create
+
+Body shape matches unified post endpoints (`post_type`, `platforms`, media fields, platform overrides) plus **required** `scheduled_time`.
+
+```bash
+curl -X POST "https://backend.postsiva.com/unified/scheduled-posts" \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: psk_live_YOUR_KEY" \
+  -d '{
+    "post_type": "text",
+    "platforms": ["linkedin"],
+    "default_text": "Queued for tomorrow.",
+    "scheduled_time": "2026-07-10T14:30:00Z"
+  }'
+```
+
+Does **not** accept `draft` / `draft_platforms` — use `POST /unified/post/*` for those.
+
+## List
+
+```bash
+curl "https://backend.postsiva.com/unified/scheduled-posts?status=scheduled&limit=20" \
+  -H "X-API-Key: psk_live_YOUR_KEY"
+```
+
+| Query | Description |
+|-------|-------------|
+| `platform` | e.g. `linkedin` |
+| `platform_user_id` | Page / org / account id |
+| `status` | `scheduled`, `published`, `failed`, `cancelled`, `publishing` |
+| `limit` / `offset` | Pagination |
+
+## Guide
+
+See [Scheduling](/guides/scheduling) for `scheduled_time` on post endpoints and timezone notes.

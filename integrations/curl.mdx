@@ -1,0 +1,280 @@
+---
+title: cURL Recipes
+description: Common Postsiva REST API recipes — connect, upload, post, schedule, list queue, and analytics.
+---
+
+Copy-paste **cURL** commands for the most common Postsiva operations. Replace `psk_live_YOUR_KEY` with your workspace API key.
+
+## Headers (all requests)
+
+```bash
+-H "X-API-Key: psk_live_YOUR_KEY" \
+-H "Content-Type: application/json"
+```
+
+Base URL: `https://backend.postsiva.com`
+
+---
+
+## Connect accounts
+
+### OAuth platforms
+
+```bash
+curl -X POST "https://backend.postsiva.com/unified/oauth/url" \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: psk_live_YOUR_KEY" \
+  -d '{"platform": ["linkedin", "instagram", "facebook"]}'
+```
+
+Open each `auth_url` from the response.
+
+### Bluesky (handle + app password)
+
+```bash
+curl -X POST "https://backend.postsiva.com/unified/oauth/url" \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: psk_live_YOUR_KEY" \
+  -d '{
+    "platform": ["bluesky"],
+    "handle": "you.bsky.social",
+    "app_password": "xxxx-xxxx-xxxx-xxxx"
+  }'
+```
+
+### Check connection status
+
+```bash
+curl "https://backend.postsiva.com/unified/oauth/token" \
+  -H "X-API-Key: psk_live_YOUR_KEY"
+```
+
+---
+
+## Upload media
+
+### Image
+
+```bash
+curl -X POST "https://backend.postsiva.com/media/upload" \
+  -H "X-API-Key: psk_live_YOUR_KEY" \
+  -F "media=@/path/to/image.jpg" \
+  -F "media_type=image"
+```
+
+Save `media_id` from the response.
+
+---
+
+## Post text
+
+### Simple cross-post
+
+```bash
+curl -X POST "https://backend.postsiva.com/unified/post/text" \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: psk_live_YOUR_KEY" \
+  -d '{
+    "platforms": ["linkedin", "threads", "bluesky"],
+    "default_text": "Hello from the Postsiva API!"
+  }'
+```
+
+### LinkedIn personal + org pages
+
+```bash
+curl -X POST "https://backend.postsiva.com/unified/post/text" \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: psk_live_YOUR_KEY" \
+  -d '{
+    "platforms": ["linkedin"],
+    "default_text": "Company update.",
+    "linkedin": {
+      "linkedin_page_ids": ["108813535"],
+      "post_to_personal": true
+    }
+  }'
+```
+
+### Facebook Page
+
+```bash
+curl -X POST "https://backend.postsiva.com/unified/post/text" \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: psk_live_YOUR_KEY" \
+  -d '{
+    "platforms": ["facebook"],
+    "default_text": "Page announcement.",
+    "facebook": {
+      "facebook_page_ids": ["756356074224043"]
+    }
+  }'
+```
+
+---
+
+## Post image
+
+```bash
+curl -X POST "https://backend.postsiva.com/unified/post/image" \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: psk_live_YOUR_KEY" \
+  -d '{
+    "platforms": ["instagram"],
+    "default_text": "New collection drop.",
+    "default_image_id": "YOUR_MEDIA_ID"
+  }'
+```
+
+### Pinterest pin (board required)
+
+```bash
+curl -X POST "https://backend.postsiva.com/unified/post/image" \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: psk_live_YOUR_KEY" \
+  -d '{
+    "platforms": ["pinterest"],
+    "default_image_id": "YOUR_MEDIA_ID",
+    "pinterest": {
+      "board_id": "1234567890123456789",
+      "pinterest_text": "Pin title",
+      "pinterest_description": "Pin description."
+    }
+  }'
+```
+
+---
+
+## Post video
+
+### YouTube (title required)
+
+```bash
+curl -X POST "https://backend.postsiva.com/unified/post/video" \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: psk_live_YOUR_KEY" \
+  -d '{
+    "platforms": ["youtube"],
+    "video_id": "YOUR_VIDEO_MEDIA_ID",
+    "youtube": {
+      "youtube_title": "My Video Title",
+      "youtube_description": "Full description with links."
+    }
+  }'
+```
+
+### TikTok with privacy
+
+```bash
+curl -X POST "https://backend.postsiva.com/unified/post/video" \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: psk_live_YOUR_KEY" \
+  -d '{
+    "platforms": ["tiktok"],
+    "default_text": "Behind the scenes.",
+    "video_id": "YOUR_VIDEO_MEDIA_ID",
+    "tiktok": {
+      "privacy_level": "PUBLIC_TO_EVERYONE"
+    }
+  }'
+```
+
+---
+
+## Schedule a post
+
+```bash
+curl -X POST "https://backend.postsiva.com/unified/post/text" \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: psk_live_YOUR_KEY" \
+  -d '{
+    "platforms": ["linkedin"],
+    "default_text": "Scheduled for tomorrow.",
+    "scheduled_time": "2026-07-10T14:30:00Z"
+  }'
+```
+
+---
+
+## Save as draft
+
+```bash
+curl -X POST "https://backend.postsiva.com/unified/post/text" \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: psk_live_YOUR_KEY" \
+  -d '{
+    "platforms": ["linkedin", "threads"],
+    "default_text": "Draft — review before publish.",
+    "draft": true
+  }'
+```
+
+### Mixed: publish Threads, draft LinkedIn
+
+```bash
+curl -X POST "https://backend.postsiva.com/unified/post/text" \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: psk_live_YOUR_KEY" \
+  -d '{
+    "platforms": ["linkedin", "threads"],
+    "default_text": "Launch copy.",
+    "draft_platforms": ["linkedin"]
+  }'
+```
+
+---
+
+## List scheduled posts (queue)
+
+```bash
+curl "https://backend.postsiva.com/unified/scheduled-posts?status=scheduled&limit=20" \
+  -H "X-API-Key: psk_live_YOUR_KEY"
+```
+
+## List drafts
+
+```bash
+curl "https://backend.postsiva.com/unified/drafts?limit=20" \
+  -H "X-API-Key: psk_live_YOUR_KEY"
+```
+
+---
+
+## Read recent posts
+
+```bash
+curl "https://backend.postsiva.com/unified/posts?platforms=linkedin&limit=5" \
+  -H "X-API-Key: psk_live_YOUR_KEY"
+```
+
+<Warning>
+  Avoid `refresh_posts=true` on LinkedIn personal unless explicitly syncing live — Apify cost applies.
+</Warning>
+
+---
+
+## Analytics
+
+```bash
+curl "https://backend.postsiva.com/unified/analytics?platforms=linkedin,instagram" \
+  -H "X-API-Key: psk_live_YOUR_KEY"
+```
+
+---
+
+## Disconnect a platform
+
+```bash
+curl -X DELETE "https://backend.postsiva.com/unified/oauth/token?platform=linkedin" \
+  -H "X-API-Key: psk_live_YOUR_KEY"
+```
+
+---
+
+## Related
+
+<CardGroup cols={2}>
+  <Card title="Quickstart" href="/quickstart">First post in 5 minutes</Card>
+  <Card title="Authentication" href="/authentication">Scopes and plans</Card>
+  <Card title="Errors" href="/errors/overview">Handle failures</Card>
+</CardGroup>

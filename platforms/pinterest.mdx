@@ -1,0 +1,124 @@
+---
+title: Pinterest
+description: Create image, video, and carousel pins — board_id is required for every Pinterest post.
+---
+
+Pinterest posts are **pins** attached to a **board**. Every pin requires a `board_id` — there is no default board.
+
+## Connect
+
+```bash
+curl -X POST "https://backend.postsiva.com/unified/oauth/url" \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: psk_live_YOUR_KEY" \
+  -d '{"platform": ["pinterest"]}'
+```
+
+One Pinterest account per workspace.
+
+## Post types (pins)
+
+| Type | Endpoint | Media |
+|------|----------|-------|
+| Image pin | `POST /unified/post/image` | Single image |
+| Video pin | `POST /unified/post/video` | Single video |
+| Carousel pin | `POST /unified/post/carousel` | 2–5 images |
+
+## board_id (required)
+
+Set `pinterest.board_id` or top-level `board_id`:
+
+```bash
+curl -X POST "https://backend.postsiva.com/unified/post/image" \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: psk_live_YOUR_KEY" \
+  -d '{
+    "platforms": ["pinterest"],
+    "default_image_id": "media-uuid",
+    "pinterest": {
+      "board_id": "1234567890123456789",
+      "pinterest_text": "Summer outfit inspiration",
+      "pinterest_description": "Light layers and neutral tones for warm weather."
+    }
+  }'
+```
+
+Missing `board_id` returns:
+
+```json
+{
+  "message": "Pinterest pin requires pinterest.board_id",
+  "error": "board_id_required"
+}
+```
+
+### board_id aliases
+
+| Field | Location | Notes |
+|-------|----------|-------|
+| `pinterest.board_id` | Inside `pinterest` object | Preferred |
+| `board_id` | Top-level body | Fallback if nested field missing |
+| `pinterestBoardId` | camelCase alias | Accepted in some clients |
+
+<Tip>
+  List boards via `GET /unified/user-profiles/` or the Postsiva app. Board IDs are numeric strings from Pinterest.
+</Tip>
+
+## Pin text fields
+
+| Field | Limit | Purpose |
+|-------|-------|---------|
+| `pinterest_text` / title | 100 characters | Pin title |
+| `pinterest_description` | 500 characters | Pin description |
+| `default_text` | — | Fallback title if `pinterest_text` omitted |
+
+## Video pin
+
+```json
+{
+  "platforms": ["pinterest"],
+  "video_id": "video-media-uuid",
+  "pinterest": {
+    "board_id": "1234567890123456789",
+    "pinterest_text": "Recipe video pin",
+    "pinterest_description": "30-second weeknight dinner idea."
+  }
+}
+```
+
+## Carousel pin
+
+```json
+{
+  "platforms": ["pinterest"],
+  "image_ids": ["id1", "id2", "id3"],
+  "pinterest": {
+    "board_id": "1234567890123456789",
+    "pinterest_text": "Home office ideas"
+  }
+}
+```
+
+Carousel pins support **2–5 images**.
+
+## Reading pins
+
+Filter unified posts by board:
+
+```bash
+curl "https://backend.postsiva.com/unified/posts?platforms=pinterest&board_id=1234567890123456789" \
+  -H "X-API-Key: psk_live_YOUR_KEY"
+```
+
+## Image sizing
+
+Postsiva auto-fits images to **1000×1500** (2:3) for Pinterest when normalization runs. See [Media guidelines](/guides/media-guidelines).
+
+## Common errors
+
+| Error | Cause | Fix |
+|-------|-------|-----|
+| `NOT_CONNECTED` | Pinterest not linked | Complete OAuth |
+| `board_id_required` | No board specified | Add `pinterest.board_id` |
+| `422` title | Pin title over 100 chars | Shorten title |
+| `422` description | Over 500 chars | Shorten description |

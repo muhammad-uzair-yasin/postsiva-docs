@@ -1,0 +1,96 @@
+---
+title: Authentication
+description: Workspace API keys, headers, scopes, and plan gates for REST and MCP.
+---
+
+Postsiva supports **JWT** (web/mobile app) and **workspace API keys** (automation and MCP). This page covers API keys — what you need for REST and MCP integrations.
+
+## Workspace API key format
+
+Keys are prefixed with `psk_live_` and tied to a single workspace.
+
+```
+psk_live_<random_secret>
+```
+
+Create keys in **Settings → API Keys** or `POST /workspaces/{workspace_id}/api-keys` (JWT only).
+
+## REST headers
+
+<CodeGroup>
+
+```bash cURL
+curl "https://backend.postsiva.com/unified/posts" \
+  -H "X-API-Key: psk_live_YOUR_KEY"
+```
+
+```javascript JavaScript
+fetch("https://backend.postsiva.com/unified/posts", {
+  headers: { "X-API-Key": "psk_live_YOUR_KEY" },
+});
+```
+
+```python Python
+import requests
+headers = {"X-API-Key": "psk_live_YOUR_KEY"}
+r = requests.get("https://backend.postsiva.com/unified/posts", headers=headers)
+```
+
+</CodeGroup>
+
+Alternative: `Authorization: Bearer psk_live_YOUR_KEY` (same behavior).
+
+### Optional workspace header
+
+With an API key, **`X-Workspace-Id` is optional** — the workspace comes from the key. If you send it, it must match the key's workspace or you get `403`.
+
+With JWT login, `X-Workspace-Id` is **required** for workspace-scoped routes.
+
+## MCP authentication
+
+Unified MCP accepts the same key via:
+
+- Header: `X-API-Key: psk_live_…`
+- Query: `https://mcp.postsiva.com/mcp?apikey=psk_live_…`
+
+Invalid or missing keys return an in-band tool error (not a separate auth endpoint).
+
+## API key scopes
+
+Set `scope` when creating a key:
+
+| Scope | Access |
+|-------|--------|
+| `linkedin_only` | Default — LinkedIn OAuth and posting only |
+| `linkedin_posts` | Read-only: `GET /unified/posts` only |
+| `linkedin,instagram` | Comma-separated platform allowlist for OAuth |
+| `full` | All platforms the workspace supports |
+
+OAuth routes enforce scope — a `linkedin_only` key cannot connect Instagram.
+
+## Plan requirements
+
+| Feature | Plan |
+|---------|------|
+| Create API keys | **Pro** (`api_keys_enabled`) |
+| Unified MCP | **Pro** (`mcp_enabled`) |
+| GPT Actions | **Pro** (`gpt_app_enabled`) |
+
+Blocked requests return a plan upgrade message.
+
+## Security best practices
+
+- Never commit keys to git or expose them in client-side code
+- Use scoped keys for integrations (e.g. read-only `linkedin_posts` for analytics dashboards)
+- Revoke unused keys in Settings → API Keys
+- Rotate keys if leaked
+
+## Errors
+
+| Status | Meaning |
+|--------|---------|
+| `401` | Missing or invalid key |
+| `403` | Scope restriction or workspace mismatch |
+| `402` / plan message | Feature not on current plan |
+
+See [Errors overview](/errors/overview).

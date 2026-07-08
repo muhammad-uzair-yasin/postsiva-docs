@@ -1,0 +1,123 @@
+---
+title: Media Guidelines
+description: Image and video requirements for Postsiva uploads — formats, sizing, upload flow, and per-platform notes.
+---
+
+Postsiva accepts images and videos through **`POST /media/upload`**. Use returned `media_id` values in post endpoints (`default_image_id`, `video_id`, `image_ids`).
+
+Full API reference: [Media](/apis/media).
+
+## Upload flow
+
+```bash
+# Simple upload (< 10 MB)
+curl -X POST "https://backend.postsiva.com/media/upload" \
+  -H "X-API-Key: psk_live_YOUR_KEY" \
+  -F "media=@photo.jpg" \
+  -F "media_type=image"
+```
+
+Response includes `media_id` — reference it in post bodies.
+
+### Large files (≥ 10 MB)
+
+Use the chunked storage API (not query params on `/upload`):
+
+1. `POST /media/storage/init` — get `upload_id`
+2. `POST /media/storage/chunk` — send 1 MB chunks
+3. `POST /media/storage/complete` — finalize and get `media_id`
+
+<Info>
+  Video processing after upload may take time for large files. The complete step uses an extended timeout.
+</Info>
+
+## Supported formats
+
+| Type | Formats |
+|------|---------|
+| Image | JPEG, PNG, GIF, WebP |
+| Video | MP4, MOV, AVI, MKV, WebM, M4V |
+
+## General requirements
+
+| Rule | Detail |
+|------|--------|
+| HTTPS URLs | External `default_image_url` / `video_url` must be `http` or `https` |
+| Media ID vs URL | Prefer `media_id` or HTTPS `*_url` fields; Threads/Bluesky auto-upload URLs server-side |
+| Carousel size | 2–20 images (LinkedIn/Instagram); 2–5 for Pinterest carousel pins |
+| Auto-fix | Postsiva letterboxes images to platform canvas sizes when normalization runs |
+
+## Auto-fit canvas sizes
+
+When image auto-fix runs, targets are:
+
+| Platform | Canvas (W × H) |
+|----------|----------------|
+| LinkedIn | 1080 × 1080 |
+| Facebook | 1080 × 1350 |
+| Instagram | 1080 × 1350 (aspect ratio corrected) |
+| TikTok | 1080 × 1920 |
+| Threads | 1080 × 1920 |
+| Pinterest | 1000 × 1500 |
+| Bluesky | 1000 × 1000 |
+
+<Tip>
+  Upload high-resolution source images. Auto-fix preserves content with letterboxing rather than cropping arbitrarily.
+</Tip>
+
+## Platform-specific notes
+
+| Platform | Key requirement | Doc |
+|----------|-----------------|-----|
+| Instagram | 4:5 to 1.91:1 aspect ratio; Reels video | [Instagram](/platforms/instagram) |
+| TikTok | 9:16 video preferred | [TikTok](/platforms/tiktok) |
+| YouTube | Title required; optional custom thumbnail | [YouTube](/platforms/youtube) |
+| Pinterest | `board_id` + image or video | [Pinterest](/platforms/pinterest) |
+| Bluesky | `default_image_id` or `default_image_url`; video id or URL | [Bluesky](/platforms/bluesky) |
+| Threads | `default_image_id` or `default_image_url` | [Threads](/platforms/threads) |
+| Facebook | Per-page images via `facebook_page_images` | [Facebook](/platforms/facebook) |
+| LinkedIn | Per-page images via `linkedin_page_images` | [LinkedIn](/platforms/linkedin) |
+
+## Post body media fields
+
+| Field | Use |
+|-------|-----|
+| `default_image_id` | Single image (most platforms) |
+| `default_image_url` | Direct URL (platforms that support pull-from-URL) |
+| `image_ids` | Carousel — array of media IDs |
+| `video_id` | Uploaded video media ID |
+| `video_url` | Direct video URL (where supported) |
+
+## Example: multi-platform image post
+
+```json
+{
+  "platforms": ["linkedin", "instagram", "facebook"],
+  "default_text": "Product launch visual.",
+  "default_image_id": "uploaded-media-uuid",
+  "facebook": {
+    "facebook_page_ids": ["756356074224043"]
+  }
+}
+```
+
+## AI-generated images
+
+Generate images from text, then post:
+
+```bash
+curl -X POST "https://backend.postsiva.com/unified/image/generate" \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: psk_live_YOUR_KEY" \
+  -d '{"prompt": "Minimal product hero shot, white background"}'
+```
+
+Use returned `media_id` in a post request. Requires AI Composer on your plan.
+
+## Related
+
+<CardGroup cols={2}>
+  <Card title="Character limits" href="/guides/character-limits">Caption and title limits</Card>
+  <Card title="Scheduling" href="/guides/scheduling">Schedule media posts</Card>
+  <Card title="Media API" href="/apis/media">Upload, chunked storage, list, delete</Card>
+</CardGroup>

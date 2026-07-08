@@ -1,0 +1,181 @@
+---
+title: HTTP Errors
+description: HTTP 400, 401, 403, 404, 422, and 500 status codes from the Postsiva REST API — causes and fixes.
+---
+
+Postsiva follows standard HTTP semantics. The response body is JSON with a `detail` field (FastAPI format) or structured error object.
+
+## Status code reference
+
+| Code | Name | When it happens |
+|------|------|-----------------|
+| **400** | Bad Request | Invalid platform, missing required body field, unsupported post type |
+| **401** | Unauthorized | Missing, invalid, expired, or revoked API key |
+| **403** | Forbidden | Plan feature blocked, API key scope mismatch, workspace header mismatch |
+| **404** | Not Found | Draft, scheduled post, or resource ID does not exist |
+| **422** | Unprocessable Entity | Validation failure — character limits, invalid enum, schema error |
+| **500** | Internal Server Error | Unexpected server failure |
+
+---
+
+## 400 Bad Request
+
+**Common causes:**
+
+| Scenario | Example `detail` |
+|----------|------------------|
+| Unknown platform | `Invalid or unsupported platform: 'twitter'. Supported: ...` |
+| Unsupported post type | `This platform does not support text posting.` |
+| Missing `post_type` | `post_type is required` |
+| Empty `platforms` | `platforms must have at least one platform` |
+| Invalid `draft_platforms` | `draft_platforms must be a subset of platforms. Invalid: instagram.` |
+| Bluesky connect missing fields | `handle and app_password are required for bluesky` |
+
+**Fix:** Validate platform slugs, post types, and required platform fields before calling. See [Platforms overview](/platforms/overview).
+
+---
+
+## 401 Unauthorized
+
+**Common causes:**
+
+| Scenario | Response |
+|----------|----------|
+| No API key header | `401` — key required |
+| Wrong key format | `Invalid API key.` (`APIKEY_INVALID`) |
+| Revoked key | `API key has been revoked.` (`APIKEY_REVOKED`) |
+| Expired key | `API key has expired.` (`APIKEY_EXPIRED`) |
+
+**Fix:**
+
+```bash
+# Correct header
+-H "X-API-Key: psk_live_YOUR_KEY"
+```
+
+Regenerate key in **Settings → API Keys** if compromised or revoked.
+
+---
+
+## 403 Forbidden
+
+Three distinct 403 cases:
+
+### Plan feature blocked
+
+```json
+{
+  "detail": {
+    "error": "plan_required",
+    "feature": "scheduling_enabled",
+    "plan": "free",
+    "message": "Plan upgrade required for: scheduling_enabled"
+  }
+}
+```
+
+| Feature gate | Routes affected |
+|--------------|-----------------|
+| `api_keys_enabled` | API key auth |
+| `mcp_enabled` | MCP server |
+| `drafts_enabled` | `/unified/drafts`, `draft: true` |
+| `scheduling_enabled` | `scheduled_time`, `/unified/scheduled-posts` |
+| `analytics_enabled` | `/unified/analytics` |
+
+Also **`402 Payment Required`** for insufficient post or AI credits.
+
+### API key scope mismatch
+
+```json
+{
+  "detail": "This API key is not allowed for platform 'instagram'. Key scope: linkedin_only. Only platforms in the key's scope can be used."
+}
+```
+
+**Fix:** Create a key with broader scope (e.g. `linkedin,instagram` or `full`).
+
+### Workspace mismatch
+
+When using JWT + `X-Workspace-Id`, or when optional `X-Workspace-Id` with API key doesn't match the key's workspace:
+
+```
+403 — workspace does not match API key
+```
+
+**Fix:** Omit `X-Workspace-Id` with API keys (workspace inferred from key).
+
+---
+
+## 404 Not Found
+
+| Resource | Example |
+|----------|---------|
+| Draft | `GET /unified/drafts/{id}` — draft deleted or wrong ID |
+| Scheduled post | `PATCH /unified/scheduled-posts/{id}` — invalid ID |
+| Media | Referenced `media_id` not in workspace |
+
+**Fix:** Verify IDs from list endpoints before update/delete.
+
+---
+
+## 422 Unprocessable Entity
+
+Validation errors before the request reaches platform APIs.
+
+### Character limits
+
+```json
+{
+  "detail": "Max text character limit for bluesky is 300. Received 350 characters in default_text."
+}
+```
+
+See [Character limits](/guides/character-limits).
+
+### YouTube title
+
+```json
+{
+  "detail": "Max text character limit for youtube is 100. Received 120 characters in youtube_title/default_text (video title)."
+}
+```
+
+### TikTok photo title
+
+```json
+{
+  "detail": "Max TikTok Business photo title length is 90 UTF-16 code units. Received 95 in tiktok_title."
+}
+```
+
+### Pydantic schema
+
+Malformed JSON types, wrong field types — FastAPI returns field-level `loc` and `msg` arrays.
+
+---
+
+## 500 Internal Server Error
+
+Unexpected failures — OAuth URL generation, storage upload, worker errors.
+
+**Fix:**
+- Retry with backoff
+- Check request payload for edge cases
+- Contact support if persistent
+
+OAuth routes may trigger internal error notification emails for debugging.
+
+---
+
+## Rate limiting
+
+Heavy API key usage may return rate limit errors (implementation-specific status, often `429` or wrapped in `403` with `APIKEY_RATE_LIMIT`).
+
+Include retry-after logic in production integrations.
+
+## Related
+
+<CardGroup cols={2}>
+  <Card title="Postsiva errors" href="/errors/postsiva">NOT_CONNECTED, plan codes</Card>
+  <Card title="Authentication" href="/authentication">Keys and scopes</Card>
+</CardGroup>

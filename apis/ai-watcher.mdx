@@ -1,0 +1,73 @@
+---
+title: AI Watcher API
+description: Enable comment watching, auto-reply, lead rules, and run history via /unified/ai-autoreplier.
+---
+
+Pro APIs for monitoring comments on selected posts.
+
+Prefix: `/unified/ai-autoreplier`
+
+## Authentication
+
+Same as other unified routes — **workspace API key** or **JWT session**:
+
+```bash
+# API key (recommended for automation)
+X-API-Key: psk_live_YOUR_KEY
+
+# Or JWT
+Authorization: Bearer YOUR_JWT
+X-Workspace-Id: YOUR_WORKSPACE_UUID
+```
+
+With an API key, the workspace is inferred from the key. Optional `X-Workspace-Id` must match if sent.
+
+Requires Pro flags: `auto_replier_enabled`, `ai_watcher_enabled`, `lead_detection_enabled` (per endpoint).
+
+<Note>
+  `GET /admin/overview` is **JWT only** (cross-workspace admin).
+</Note>
+
+## Endpoints
+
+| Method | Path | Gates | Description |
+|--------|------|-------|-------------|
+| `POST` | `/enable` | auto-replier | Watch a post |
+| `POST` | `/disable` | auto-replier | Stop watching |
+| `GET` | `/list` | auto-replier | List enabled posts |
+| `POST` | `/force-run` | auto-replier | Run all enabled |
+| `POST` | `/force-run/{post_id}` | auto-replier | Run one post (`platform` query) |
+| `GET` | `/history` | AI Watcher | Run history |
+| `GET` | `/leads` | lead detection | Detected leads |
+| `PATCH` | `/rules` | lead detection | Keywords / custom lead rule |
+
+## Enable example (API key)
+
+```bash
+curl -X POST "https://backend.postsiva.com/unified/ai-autoreplier/enable" \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: psk_live_YOUR_KEY" \
+  -d '{
+    "post_id": "urn:li:share:…",
+    "platform": "linkedin",
+    "page_id": null
+  }'
+```
+
+## Lead rules
+
+```bash
+curl -X PATCH "https://backend.postsiva.com/unified/ai-autoreplier/rules" \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: psk_live_YOUR_KEY" \
+  -d '{
+    "post_id": "…",
+    "platform": "linkedin",
+    "lead_keywords": ["pricing", "demo", "buy"],
+    "lead_custom_rule": "Mark as lead if the commenter asks for a sales call."
+  }'
+```
+
+## Product overview
+
+See [AI Watcher feature](/features/ai-watcher).

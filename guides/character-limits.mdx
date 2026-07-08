@@ -1,0 +1,96 @@
+---
+title: Character Limits
+description: Text, caption, title, and description limits for every Postsiva platform — enforced at 422 on exceed.
+---
+
+Postsiva validates text length **before** posting. Over-limit text returns HTTP **422** with the platform name and character count.
+
+## Primary limits (captions / post text)
+
+| Platform | Limit | Field(s) | Post types |
+|----------|-------|----------|------------|
+| LinkedIn | **3,000** | `default_text`, `linkedin_text`, `linkedin_page_texts` | Text, image, video, carousel |
+| Facebook | **63,206** | `default_text`, `facebook_page_texts` | Text, image, video, carousel |
+| Threads (text) | **500** | `default_text`, `threads_text` | Text only |
+| Threads (caption) | **2,200** | Caption on image, carousel, video | Image, carousel, video |
+| Instagram | **2,200** | `default_text`, `instagram_text` | Image, carousel, video |
+| TikTok | **2,200** | `default_text`, `tiktok_text` | Video, image, carousel |
+| Bluesky | **300** | `default_text` | Text, image, carousel, video |
+| YouTube | — | See title/description below | Video only |
+
+## Secondary limits (titles / descriptions)
+
+| Platform | Field | Limit |
+|----------|-------|-------|
+| YouTube | `youtube_title` / `default_text` (title) | **100** |
+| YouTube | `youtube_description` | **5,000** |
+| Pinterest | `pinterest_text` (pin title) | **100** |
+| Pinterest | `pinterest_description` | **500** |
+| TikTok (photo) | `tiktok_title` | **90** UTF-16 code units |
+
+## Multi-platform posting
+
+When posting to multiple platforms, **each platform is validated independently**. A caption valid for LinkedIn (3,000) may fail on Bluesky (300):
+
+```json
+{
+  "platforms": ["linkedin", "bluesky"],
+  "default_text": "A 400-character caption..."
+}
+```
+
+Returns `422` for Bluesky even if LinkedIn would succeed.
+
+<Tip>
+  Use platform overrides to send different lengths per destination:
+  `threads.threads_text`, `instagram.instagram_text`, etc.
+</Tip>
+
+## Example: platform-specific text
+
+```json
+{
+  "platforms": ["linkedin", "threads", "bluesky"],
+  "default_text": "Full LinkedIn article-style post with details...",
+  "threads": {
+    "threads_text": "Medium-length Threads post under 500 chars."
+  },
+  "bluesky": {}
+}
+```
+
+For Bluesky, trim `default_text` to 300 chars or add a shorter override in a pre-processing step.
+
+## Error format
+
+```json
+{
+  "detail": "Max text character limit for threads is 500. Received 612 characters in threads_text/default_text."
+}
+```
+
+Per-page LinkedIn/Facebook maps show the key in the label:
+
+```json
+{
+  "detail": "Max text character limit for linkedin is 3000. Received 3100 characters in linkedin_page_texts[108813535]."
+}
+```
+
+## Quick reference by use case
+
+| Use case | Safe default length |
+|----------|---------------------|
+| Cross-post to all text platforms | **300** (Bluesky floor) |
+| LinkedIn + Facebook only | **3,000** |
+| Threads text post | **500** |
+| Instagram / TikTok caption | **2,200** |
+| YouTube title | **100** |
+| Pinterest pin title | **100** |
+
+## Related
+
+<CardGroup cols={2}>
+  <Card title="Platforms overview" href="/platforms/overview">All eight platforms</Card>
+  <Card title="HTTP errors" href="/errors/http">422 validation errors</Card>
+</CardGroup>

@@ -1,0 +1,40 @@
+---
+title: Chrome Extension
+description: Postsiva LinkedIn repost side panel — requirements, capabilities, and how it uses the API.
+---
+
+The **Postsiva Chrome extension** (MV3) adds a side panel on LinkedIn for fast reposting with AI assist.
+
+## Requirements
+
+- Chrome (or Chromium)
+- Postsiva account on **Starter or Pro** (`extension_enabled`)
+- Login + workspace picker inside the extension
+
+## Capabilities
+
+| Feature | Status |
+|---------|--------|
+| Select LinkedIn post via content script | ✓ |
+| Repost text + images / carousel | ✓ |
+| Repost video | Not supported yet |
+| AI rephrase | ✓ |
+| AI image generate / edit | ✓ |
+| Personal + org page posting | ✓ |
+| Save draft | ✓ |
+
+## How it talks to Postsiva
+
+- Uses the same backend base URL (configurable in extension **Options**)
+- Auth via app JWT session
+- Posts/drafts through unified posting / drafts paths (`/unified/post/*`, `/unified/drafts`)
+
+## Install
+
+Build from `postsiva-extension` (`npm run build`) and load `dist/` in `chrome://extensions`, or install from your published Chrome Web Store listing when available.
+
+## Related
+
+- [Clients](/features/clients)
+- [AI content](/features/ai-content)
+- [LinkedIn](/platforms/linkedin)

@@ -1,0 +1,124 @@
+---
+title: Bluesky
+description: Connect Bluesky with handle and app password — 300-character limit; use bluesky platform slug.
+---
+
+Bluesky is the only platform that connects via **handle + app password** instead of OAuth redirect. Supports text, image, carousel, and video posts.
+
+## Connect
+
+No browser redirect — send credentials directly:
+
+```bash
+curl -X POST "https://backend.postsiva.com/unified/oauth/url" \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: psk_live_YOUR_KEY" \
+  -d '{
+    "platform": ["bluesky"],
+    "handle": "yourname.bsky.social",
+    "app_password": "xxxx-xxxx-xxxx-xxxx"
+  }'
+```
+
+| Field | Description |
+|-------|-------------|
+| `handle` | Your Bluesky handle (e.g. `alice.bsky.social`) |
+| `app_password` | App password from Bluesky Settings → App Passwords |
+
+Response has `auth_url: null` — connection completes immediately.
+
+<Warning>
+  Use an **app password**, not your main account password. Revoke unused app passwords in Bluesky settings.
+</Warning>
+
+## Platform slug
+
+Use **`bluesky`** in `platforms` arrays and API filters:
+
+```json
+{ "platforms": ["bluesky"] }
+```
+
+<Note>
+  Some older examples and video test payloads use the alias **`blue_sky`**. Prefer **`bluesky`** — it is the canonical slug in posting, OAuth, and unified posts. If a legacy integration sends `blue_sky`, normalize to `bluesky` before calling the API.
+</Note>
+
+## Post types
+
+| Type | Endpoint | Media requirement |
+|------|----------|-------------------|
+| Text | `POST /unified/post/text` | — |
+| Image | `POST /unified/post/image` | `default_image_id` required (URL not supported) |
+| Carousel | `POST /unified/post/carousel` | `image_ids` |
+| Video | `POST /unified/post/video` | `video_id` required (URL not supported) |
+
+## Text post
+
+```bash
+curl -X POST "https://backend.postsiva.com/unified/post/text" \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: psk_live_YOUR_KEY" \
+  -d '{
+    "platforms": ["bluesky"],
+    "default_text": "Hello from the Postsiva API on Bluesky!"
+  }'
+```
+
+## Character limit
+
+Bluesky posts are capped at **300 characters**:
+
+```json
+{
+  "detail": "Max text character limit for bluesky is 300. Received 350 characters in default_text."
+}
+```
+
+See [Character limits](/guides/character-limits).
+
+## Image and video
+
+Provide **`default_image_id`** or **`default_image_url`** for images; **`video_id`** or **`video_url`** for video. Postsiva auto-uploads HTTPS URLs when needed:
+
+```bash
+curl -X POST "https://backend.postsiva.com/unified/post/image" \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: psk_live_YOUR_KEY" \
+  -d '{
+    "platforms": ["bluesky"],
+    "default_text": "Photo post on Bluesky.",
+    "default_image_url": "https://cdn.example.com/photo.jpg"
+  }'
+```
+
+Or upload first via `POST /media/upload` and pass `default_image_id` / `video_id`.
+
+## Multi-platform with short-form networks
+
+```json
+{
+  "platforms": ["bluesky", "threads"],
+  "default_text": "Shared short update.",
+  "threads": {
+    "threads_text": "Same message on Threads (500 char limit)."
+  }
+}
+```
+
+Bluesky enforces 300 chars; Threads text posts allow 500.
+
+## Disconnect
+
+```bash
+curl -X DELETE "https://backend.postsiva.com/unified/oauth/token?platform=bluesky" \
+  -H "X-API-Key: psk_live_YOUR_KEY"
+```
+
+## Common errors
+
+| Error | Cause | Fix |
+|-------|-------|-----|
+| `NOT_CONNECTED` | Bluesky not linked | Connect with handle + app password |
+| Missing credentials | No `handle` or `app_password` on connect | Provide both fields |
+| `422` text limit | Over 300 characters | Shorten post |
+| Media error | Invalid or unreachable URL | Use HTTPS URL or upload via `/media/upload` first |

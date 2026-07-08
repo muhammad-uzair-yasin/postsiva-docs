@@ -1,0 +1,29 @@
+---
+title: WhatsApp
+description: WhatsApp workspace agent and webhooks — chat with Postsiva tools over WhatsApp (Pro).
+---
+
+WhatsApp is an **agent channel**, not a social publishing target in `/unified/post/*`.
+
+## WhatsApp agent (Pro)
+
+Flag: `whatsapp_agent_enabled`.
+
+- Link a phone number in **Settings → WhatsApp**
+- Message the Business number; the LangGraph agent runs workspace tools (same family as MCP)
+- Manage accounts, publish, inbox, analytics, AI content via chat
+
+## Webhooks
+
+Server webhook: `/whatsapp` (Meta Cloud API). Configured by Postsiva — not a user-outbound webhook API.
+
+## Related agents
+
+| Channel | Flag |
+|---------|------|
+| Instagram DM | `instagram_dm_enabled` |
+| Facebook Messenger | `facebook_dm_enabled` |
+| Website agent chat | [Agent chat API](/apis/agent-chat) |
+| MCP | [MCP](/mcp/overview) |
+
+See [Agents](/features/agents).

@@ -1,0 +1,67 @@
+---
+title: Postsiva Developer Docs
+description: Unified social media API and MCP for posting, analytics, comments, and AI content across LinkedIn, Instagram, Facebook, TikTok, YouTube, Threads, Pinterest, and Bluesky.
+---
+
+Postsiva is a unified API and MCP server for social media — connect accounts once in a **workspace**, then publish, schedule, read analytics, manage inbox, and run AI workflows with a **workspace API key** (`psk_live_…`) or **Unified MCP** (Cursor, Claude, ChatGPT).
+
+Product map (publishing, AI Watcher, personas, agents, clients): [Features overview](/features/overview).
+
+## Supported platforms
+
+Unified publishing (8) + Snapchat OAuth + WhatsApp agent:
+
+<CardGroup cols={4}>
+  <Card title="LinkedIn" icon="linkedin" href="/platforms/linkedin" />
+  <Card title="Facebook" icon="facebook" href="/platforms/facebook" />
+  <Card title="Instagram" icon="instagram" href="/platforms/instagram" />
+  <Card title="TikTok" icon="tiktok" href="/platforms/tiktok" />
+  <Card title="YouTube" icon="youtube" href="/platforms/youtube" />
+  <Card title="Threads" icon="threads" href="/platforms/threads" />
+  <Card title="Pinterest" icon="pinterest" href="/platforms/pinterest" />
+  <Card title="Bluesky" icon="bluesky" href="/platforms/bluesky" />
+  <Card title="Snapchat" href="/platforms/snapchat" />
+  <Card title="WhatsApp" href="/platforms/whatsapp" />
+</CardGroup>
+
+## Two ways to integrate
+
+| Method | Base URL | Best for |
+|--------|----------|----------|
+| **REST API** | `https://backend.postsiva.com` | Scripts, n8n, Zapier, your backend |
+| **Unified MCP** | `https://mcp.postsiva.com/mcp` | AI agents in Cursor, Claude Desktop, MCP clients |
+
+Both authenticate with the same **workspace API key**. The key resolves your workspace automatically — no `X-Workspace-Id` header required (optional; must match if sent).
+
+## API-first design
+
+Every feature available in the Postsiva web app is exposed programmatically:
+
+- REST endpoints return JSON
+- MCP tools mirror the same backend logic as the WhatsApp/website agent
+- GPT Actions (`/unified/gpt-actions/*`) expose a REST mirror for ChatGPT Custom GPTs
+
+## How to get started
+
+<Steps>
+  <Step title="Create a Postsiva account">
+    Sign up at [postsiva.com](https://postsiva.com) and create or join a workspace.
+  </Step>
+  <Step title="Connect social accounts">
+    Link platforms in **Settings → Integrations** (or via the OAuth API / MCP `manage_platform_connection`).
+  </Step>
+  <Step title="Create a workspace API key">
+    **Settings → API Keys** (Pro plan). Copy the `psk_live_…` secret — shown once.
+  </Step>
+  <Step title="Make your first call">
+    Follow the [Quickstart](/quickstart), or the full [Complete setup flow](/guides/complete-setup) (UI + programmatic connect + API key).
+  </Step>
+</Steps>
+
+<Note>
+  API keys and MCP require the **Pro** plan (`api_keys_enabled` + `mcp_enabled`). Free and Starter plans use the web app only.
+</Note>
+
+<Card title="All posting parameters" icon="list" href="/apis/posting-parameters">
+  Full per-platform body fields for text, image, carousel, and video (LinkedIn pages, Facebook pages, TikTok privacy, YouTube title, Pinterest board, …).
+</Card>

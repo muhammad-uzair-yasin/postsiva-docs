@@ -1,0 +1,35 @@
+---
+title: Snapchat
+description: Connect Snapchat via unified OAuth — profile support; publishing not on the same path as the core eight networks.
+---
+
+Snapchat is included in **unified OAuth** (`SUPPORTED_PLATFORMS`) so you can connect and read connection/profile state alongside other networks.
+
+## Connect
+
+```bash
+curl -X POST "https://backend.postsiva.com/unified/oauth/url" \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: psk_live_YOUR_KEY" \
+  -d '{"platform": ["snapchat"]}'
+```
+
+Complete OAuth at the returned `auth_url`, then check:
+
+```bash
+curl "https://backend.postsiva.com/unified/oauth/token?platform=snapchat" \
+  -H "X-API-Key: psk_live_YOUR_KEY"
+```
+
+## Profiles
+
+Public profile helpers live under `/snapchat/public-profiles`. Unified profiles may include Snapchat when connected — see [User profiles](/apis/user-profiles).
+
+## Publishing
+
+Organic Snapchat publishing is **not** in the same multi-platform `POST /unified/post/*` matrix as LinkedIn/Instagram/etc. Use the app/Swagger for any Snapchat-specific post routes available on your deployment.
+
+## Related
+
+- [Platforms overview](/platforms/overview)
+- [OAuth API](/apis/oauth)

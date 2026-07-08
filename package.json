@@ -1,0 +1,14 @@
+{
+  "name": "postsiva-docs",
+  "private": true,
+  "engines": {
+    "node": ">=18 <25"
+  },
+  "scripts": {
+    "dev": "PATH=\"/usr/bin:/bin:$PATH\" mintlify dev",
+    "broken-links": "PATH=\"/usr/bin:/bin:$PATH\" mintlify broken-links"
+  },
+  "devDependencies": {
+    "mintlify": "^4.0.0"
+  }
+}

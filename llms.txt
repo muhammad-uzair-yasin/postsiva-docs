@@ -1,0 +1,66 @@
+# Postsiva API Documentation
+
+> Use this index to discover all docs pages. Site: https://docs.postsiva.com
+
+## How to Get Started with Postsiva
+
+1. [Complete setup flow](/guides/complete-setup.md) — UI steps + programmatic OAuth + API key automation
+2. [Quickstart](/quickstart.md)
+3. [Features overview](/features/overview.md) — full product map
+4. [Posting parameters](/apis/posting-parameters.md) — all platform fields
+
+## Get started
+- [Introduction](/introduction.md): Unified API + MCP overview
+- [Quickstart](/quickstart.md): First post with API key
+- [Authentication](/authentication.md): Workspace API keys, scopes, Pro plan
+- [Workspaces](/workspaces.md): Workspace-scoped data model
+
+## Features
+- [Overview](/features/overview.md)
+- Publishing, scheduling & drafts, inbox, analytics
+- AI content, AI Watcher, personas, agents
+- Workspaces & team, clients (web/mobile/extension), ads (beta)
+
+## REST API
+- [API Overview](/apis/overview.md)
+- [Posting](/apis/posting.md): POST /unified/post/text|image|carousel|video
+- [Posting parameters](/apis/posting-parameters.md)
+- [Posts](/apis/posts.md): GET /unified/posts
+- [Scheduled posts](/apis/scheduled-posts.md): /unified/scheduled-posts
+- [Drafts](/apis/drafts.md): /unified/drafts
+- [Analytics](/apis/analytics.md)
+- [Comments](/apis/comments.md)
+- [OAuth](/apis/oauth.md)
+- [User profiles](/apis/user-profiles.md): GET /unified/user-profiles/
+- [Media](/apis/media.md): POST /media/upload, /media/storage/*
+- [AI Content](/apis/ai-content.md)
+- [AI Watcher](/apis/ai-watcher.md): /unified/ai-autoreplier
+- [Agent Chat](/apis/agent-chat.md)
+- [GPT Actions](/apis/gpt-actions.md)
+
+## MCP
+- [MCP Overview](/mcp/overview.md)
+- [Connect](/mcp/connect.md)
+- [Tool Catalog](/mcp/tools.md)
+- [Cursor](/mcp/cursor.md)
+- [n8n](/mcp/n8n.md)
+- [ChatGPT](/mcp/chatgpt.md)
+
+## Platforms
+- [Overview](/platforms/overview.md)
+- LinkedIn, Facebook, Instagram, TikTok, YouTube, Threads, Pinterest, Bluesky
+- Snapchat (OAuth), WhatsApp (agent)
+
+## Guides
+- Complete setup, media guidelines, character limits, scheduling, drafts
+
+## Integrations
+- Overview, n8n, Zapier, Make, cURL, Claude Desktop, Chrome extension, WhatsApp
+
+## Errors & reference
+- HTTP codes, Postsiva errors, plans, IDs and scopes
+
+## Production URLs
+- REST: https://backend.postsiva.com
+- MCP: https://mcp.postsiva.com/mcp
+- App: https://postsiva.com

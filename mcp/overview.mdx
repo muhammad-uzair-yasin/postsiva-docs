@@ -1,0 +1,62 @@
+---
+title: Unified MCP
+description: Let AI agents drive Postsiva through the Model Context Protocol — publish, analytics, comments, and AI content.
+---
+
+The **Postsiva Unified MCP** lets AI agents call Postsiva tools instead of hand-writing REST requests. Each tool runs the same backend logic as the website/WhatsApp agent.
+
+## How it works
+
+1. Your MCP client connects to `https://mcp.postsiva.com/mcp` with your workspace API key.
+2. The agent calls tools (`publish`, `get_user_posts`, …).
+3. Each call resolves `workspace_id` from the key and invokes the shared LangChain tool layer.
+4. Results are JSON returned to the agent.
+
+There is no separate MCP behavior — quotas, plan gates, and platform rules match the REST API.
+
+## Endpoint
+
+```
+https://mcp.postsiva.com/mcp
+```
+
+- **Transport:** Streamable HTTP (stateless)
+- **Auth:** `X-API-Key: psk_live_…` or `?apikey=psk_live_…`
+
+## Who it's for
+
+- **Cursor / Claude Desktop** — manage social from your editor
+- **n8n / automation** — AI Agent node with MCP
+- **Custom agents** — any MCP-compatible client
+- **Internal tools** — same surface as WhatsApp agent, different channel
+
+## Requirements
+
+- **Pro plan** (`mcp_enabled`)
+- Valid workspace API key
+- Social accounts connected in that workspace
+
+## Tool count
+
+**13 tools** — accounts, posting, queue, posts, analytics, comments, AI generation, platform connect/disconnect, web search.
+
+See the full [Tool catalog](/mcp/tools).
+
+## vs REST API
+
+| | REST | MCP |
+|---|------|-----|
+| Caller | Your code | AI agent |
+| Interface | HTTP paths + JSON bodies | Named tools + arguments |
+| Best for | Pipelines, CRON, webhooks | Natural language workflows |
+
+Use REST when you know the exact call; use MCP when an agent should decide which action to take.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Connect & setup" href="/mcp/connect">Cursor, Claude, headers</Card>
+  <Card title="Tool catalog" href="/mcp/tools">All 13 tools</Card>
+  <Card title="Cursor guide" href="/mcp/cursor">Postsiva MCP in Cursor</Card>
+  <Card title="n8n" href="/mcp/n8n">AI Agent + MCP</Card>
+</CardGroup>

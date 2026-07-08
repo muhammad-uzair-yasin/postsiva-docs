@@ -1,0 +1,31 @@
+---
+title: AI Content
+description: Generate post copy, captions from media, and AI images — exposed in the app and via REST.
+---
+
+Postsiva’s **AI Composer** (all plans for in-app; Pro for API/MCP) generates and edits social content.
+
+## Operations
+
+| Capability | Typical credits | API / MCP |
+|------------|-----------------|-----------|
+| Idea → post copy | 2 | `/unified/content`, MCP `idea_to_content` |
+| Media → caption | 2 | Media-to-content endpoints |
+| Caption → image | 5 | `/unified/image`, MCP `content_to_image` |
+| Image edit | 3 | Image edit endpoints (when enabled) |
+| Rephrase | 1 | Composer / agent tools |
+
+Exact weights: [Plans — AI credits](/reference/plans#ai-credit-weights).
+
+## Personas
+
+When **personas** are enabled (Pro), generation follows the brand voice built for that LinkedIn profile, Facebook Page, etc. See [Personas](/features/personas).
+
+## Clients
+
+- Web: Content manager / AI Composer
+- Mobile: Composer tab
+- Chrome extension: rephrase + image generate on LinkedIn reposts
+- API key / MCP: same backend tooling
+
+Docs: [AI Content API](/apis/ai-content).

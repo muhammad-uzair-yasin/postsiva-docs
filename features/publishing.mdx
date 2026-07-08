@@ -1,0 +1,52 @@
+---
+title: Publishing
+description: Publish text, image, carousel, and video to multiple social platforms in one API call.
+---
+
+Publish once, fan out to every connected network in the workspace.
+
+## Post types
+
+| Type | Endpoint | Platforms (typical) |
+|------|----------|---------------------|
+| Text | `POST /unified/post/text` | LinkedIn, Facebook, Threads, Bluesky |
+| Image | `POST /unified/post/image` | All eight + media-required networks |
+| Carousel | `POST /unified/post/carousel` | LinkedIn, Instagram, Facebook, TikTok, … |
+| Video | `POST /unified/post/video` | LinkedIn, Facebook, Instagram, TikTok, YouTube, … |
+
+## Multi-platform example
+
+```bash
+curl -X POST "https://backend.postsiva.com/unified/post/text" \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: psk_live_YOUR_KEY" \
+  -d '{
+    "platforms": ["linkedin", "threads", "bluesky"],
+    "default_text": "Shipping our latest update."
+  }'
+```
+
+Each platform returns its own result. One failure does not roll back the others.
+
+## Destination controls
+
+- **LinkedIn** — personal profile and/or org pages (`linkedin_page_ids`)
+- **Facebook** — Pages (`facebook_page_ids`)
+- **Pinterest** — board (`board_id`)
+- **YouTube** — title + description required for video
+- **TikTok** — privacy level
+
+Full field reference: [Posting parameters](/apis/posting-parameters).
+
+## Media first
+
+Upload once, reuse `media_id` across platforms:
+
+1. [Upload media](/apis/media)
+2. Pass `default_image_id` / video id on the post body
+
+## Related
+
+- [Scheduling & drafts](/features/scheduling-and-drafts)
+- [Character limits](/guides/character-limits)
+- [Media guidelines](/guides/media-guidelines)

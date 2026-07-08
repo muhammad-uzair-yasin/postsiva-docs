@@ -1,0 +1,107 @@
+---
+title: Quickstart
+description: Create an API key, connect accounts, and publish your first post in minutes.
+---
+
+Link your social accounts, create a workspace API key, and send your first post — via REST or MCP.
+
+## 1. Connect social accounts
+
+In the Postsiva app: **Settings → Integrations** → connect LinkedIn, Instagram, Facebook, etc.
+
+Or via API (after you have a key):
+
+```bash
+curl -X POST "https://backend.postsiva.com/unified/oauth/url" \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: psk_live_YOUR_KEY" \
+  -d '{"platform":["linkedin","instagram"]}'
+```
+
+Open the returned `auth_url` for each platform to complete OAuth.
+
+## 2. Create your API key
+
+1. Open **Settings → API Keys** in your workspace (Pro plan).
+2. Click **Create API Key**, choose a name and [scope](/reference/ids-and-scopes#api-key-scopes).
+3. Copy the full secret (`psk_live_…`) — it is only shown once.
+
+<Warning>
+  Store your key securely. Revoke and recreate if exposed.
+</Warning>
+
+## 3. Send your first REST post
+
+Every request uses your workspace API key. Workspace is inferred from the key.
+
+```bash
+curl -X POST "https://backend.postsiva.com/unified/post/text" \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: psk_live_YOUR_KEY" \
+  -d '{
+    "platforms": ["linkedin", "threads"],
+    "default_text": "Hello from the Postsiva API!"
+  }'
+```
+
+<ResponseField name="results" type="array">
+  Per-platform success/error objects with post metadata.
+</ResponseField>
+
+### Schedule for later
+
+Add `scheduled_time` (ISO 8601 UTC):
+
+```json
+{
+  "platforms": ["linkedin"],
+  "default_text": "Scheduled post",
+  "scheduled_time": "2026-07-10T14:30:00Z"
+}
+```
+
+### Save as draft
+
+```json
+{
+  "platforms": ["linkedin"],
+  "default_text": "Draft caption",
+  "draft": true
+}
+```
+
+## 4. Or connect Unified MCP
+
+For AI agents (Cursor, Claude, etc.):
+
+```bash
+# Cursor: Settings → MCP → add server
+# URL: https://mcp.postsiva.com/mcp
+# Header: X-API-Key: psk_live_YOUR_KEY
+```
+
+Then ask your agent: *"What accounts are connected?"* or *"Post this to LinkedIn and Instagram."*
+
+See [Connect to MCP](/mcp/connect) for Cursor, Claude Code, and n8n setup.
+
+## 5. Verify the post
+
+- Check the platform directly, or
+- `GET https://backend.postsiva.com/unified/posts?platforms=linkedin&limit=5` with your API key
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Authentication" icon="key" href="/authentication">
+    Headers, scopes, and plan requirements.
+  </Card>
+  <Card title="API Overview" icon="code" href="/apis/overview">
+    All REST endpoint groups.
+  </Card>
+  <Card title="MCP Tool Catalog" icon="robot" href="/mcp/tools">
+    13 tools for AI agents.
+  </Card>
+  <Card title="Posting guide" icon="paper-plane" href="/apis/posting">
+    Text, image, video, carousel, drafts, scheduling.
+  </Card>
+</CardGroup>

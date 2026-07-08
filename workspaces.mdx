@@ -1,0 +1,52 @@
+---
+title: Workspaces
+description: How Postsiva scopes API keys, OAuth tokens, posts, and analytics to workspaces.
+---
+
+Every Postsiva account can belong to multiple **workspaces**. API keys are always workspace-scoped.
+
+## Model
+
+| Concept | Description |
+|---------|-------------|
+| **User** | Login, billing, identity |
+| **Workspace** | Connected social accounts, posts, drafts, analytics, personas |
+| **API key** | Authenticates as one workspace; usage attributed to key creator |
+
+When you call the API with `psk_live_…`, Postsiva resolves `workspace_id` from the key — you do not pass a workspace UUID unless you want to assert it matches.
+
+## What is scoped to a workspace
+
+- OAuth tokens per platform
+- Published and scheduled posts
+- Drafts
+- Comment sync and replies
+- Unified analytics aggregates
+- AI agent chat history (per workspace thread)
+- Media library uploads
+
+## Creating API keys
+
+Requires workspace membership + Pro plan:
+
+```
+POST /workspaces/{workspace_id}/api-keys
+Authorization: Bearer <JWT>
+```
+
+Response includes `secret` once, plus `workspace_id`, `scope`, and `key_prefix`.
+
+List and revoke via the same `/workspaces/{id}/api-keys` routes (JWT only — keys cannot manage themselves).
+
+## Multi-workspace users
+
+If you belong to several workspaces, create **one API key per workspace** you automate. Each key only sees that workspace's connected accounts and content.
+
+## JWT vs API key
+
+| Auth | Use case |
+|------|----------|
+| JWT + `X-Workspace-Id` | Web app, mobile, human sessions |
+| `psk_live_` API key | Scripts, MCP, n8n, server backends |
+
+Some routes (billing, workspace members, key management) require JWT and are not available with API keys alone.

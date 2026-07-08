@@ -1,0 +1,106 @@
+---
+title: Integrations Overview
+description: Connect Postsiva to n8n, Zapier, curl scripts, MCP agents, and custom apps via the REST API.
+---
+
+Postsiva is built for automation. Every feature available in the web app is accessible via **REST** with a workspace API key — no SDK required.
+
+## Integration options
+
+| Method | Best for | Auth |
+|--------|----------|------|
+| [REST API](/apis/overview) | Custom apps, scripts, backends | `X-API-Key: psk_live_…` |
+| [cURL recipes](/integrations/curl) | Quick tests, CI, shell scripts | Same API key header |
+| [n8n](/integrations/n8n) | Visual workflows, webhooks, cron | HTTP Request node + API key |
+| [Zapier](/integrations/zapier) | No-code automations | Webhooks + Code steps |
+| [Make.com](/integrations/make) | Scenarios with HTTP modules | API key header |
+| [Unified MCP](/mcp/overview) | AI agents (Cursor, Claude) | API key header or query param |
+| [Claude Desktop](/integrations/claude) | Conversational MCP | Same MCP URL + API key |
+| [GPT Actions](/apis/gpt-actions) | ChatGPT Custom GPT | Bearer API key |
+| [Chrome extension](/integrations/chrome-extension) | LinkedIn repost UI | App login (Starter+) |
+| [WhatsApp agent](/integrations/whatsapp) | Chat control on mobile | Pro WhatsApp link |
+
+## Base URL
+
+```
+https://backend.postsiva.com
+```
+
+Local: `http://localhost:8000`
+
+## Authentication
+
+All integrations use the same workspace API key:
+
+```bash
+-H "X-API-Key: psk_live_YOUR_KEY"
+```
+
+Alternative: `Authorization: Bearer psk_live_YOUR_KEY`
+
+<Info>
+  API keys require the **Pro** plan (`api_keys_enabled`). MCP requires Pro with `mcp_enabled`.
+</Info>
+
+See [Authentication](/authentication).
+
+## Common workflows
+
+| Workflow | Endpoints |
+|----------|-----------|
+| Connect account | `POST /unified/oauth/url` |
+| Upload media | `POST /media/upload` |
+| Publish post | `POST /unified/post/text` \| `/image` \| `/video` |
+| Schedule post | Add `scheduled_time` or `POST /unified/scheduled-posts` |
+| Save draft | `draft: true` or `POST /unified/drafts` |
+| List posts | `GET /unified/posts` |
+| List queue | `GET /unified/scheduled-posts`, `GET /unified/drafts` |
+| Analytics | `GET /unified/analytics` |
+| Reply to comment | `POST /unified/comments/reply` |
+
+## Idempotency and errors
+
+- Multi-platform posts return **per-platform results** — partial success is normal
+- Check `error` field in response items (`NOT_CONNECTED`, validation errors)
+- HTTP status reflects request-level issues; platform errors are in the body
+
+See [Errors overview](/errors/overview).
+
+## Rate limits
+
+API keys may hit rate limits under heavy use. Response includes rate limit details when exceeded.
+
+## Choose your integration
+
+<CardGroup cols={2}>
+  <Card title="n8n" icon="diagram-project" href="/integrations/n8n">
+    REST nodes with API key headers — ideal for scheduled workflows.
+  </Card>
+  <Card title="Zapier" icon="bolt" href="/integrations/zapier">
+    Webhooks + Code steps pattern for no-code automations.
+  </Card>
+  <Card title="Make.com" icon="gears" href="/integrations/make">
+    HTTP modules + scenarios against the same REST API.
+  </Card>
+  <Card title="cURL" icon="terminal" href="/integrations/curl">
+    Copy-paste recipes for common operations.
+  </Card>
+  <Card title="Claude Desktop" icon="robot" href="/integrations/claude">
+    Unified MCP inside Claude.
+  </Card>
+  <Card title="Chrome extension" icon="puzzle-piece" href="/integrations/chrome-extension">
+    LinkedIn side-panel repost + AI.
+  </Card>
+  <Card title="WhatsApp" icon="whatsapp" href="/integrations/whatsapp">
+    Workspace agent over WhatsApp (Pro).
+  </Card>
+  <Card title="MCP" icon="robot" href="/mcp/connect">
+    Connect Cursor and other MCP clients.
+  </Card>
+</CardGroup>
+
+## Webhooks (incoming)
+
+Postsiva does not push outbound webhooks for post status today. Poll `GET /unified/scheduled-posts` or `GET /unified/posts` from your automation on a schedule, or use n8n/Zapier timers.
+
+Facebook and Instagram **comment webhooks** are handled server-side for inbox features — not user-configurable outbound hooks.

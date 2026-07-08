@@ -1,0 +1,374 @@
+---
+title: Posting
+description: Publish, draft, or schedule text, image, video, and carousel posts to multiple social platforms in one request.
+---
+
+Publish to one or more connected platforms with a single JSON body. Postsiva merges **unified fields** (shared defaults) with **platform override objects** (`linkedin`, `facebook`, etc.) when you need per-network copy or targeting.
+
+<Note>
+  For every field Postsiva accepts (per platform), see the complete **[Posting parameters](/apis/posting-parameters)** reference. For UI + OAuth + API key setup, see **[Complete setup](/guides/complete-setup)**.
+</Note>
+
+## Base URL & auth
+
+```
+https://backend.postsiva.com
+```
+
+<CodeGroup>
+
+```bash cURL
+curl -X POST "https://backend.postsiva.com/unified/post/text" \
+  -H "X-API-Key: psk_live_YOUR_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"platforms":["linkedin"],"default_text":"Hello from Postsiva!"}'
+```
+
+```javascript JavaScript
+await fetch("https://backend.postsiva.com/unified/post/text", {
+  method: "POST",
+  headers: {
+    "X-API-Key": "psk_live_YOUR_KEY",
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({
+    platforms: ["linkedin"],
+    default_text: "Hello from Postsiva!",
+  }),
+});
+```
+
+```python Python
+import requests
+
+requests.post(
+    "https://backend.postsiva.com/unified/post/text",
+    headers={"X-API-Key": "psk_live_YOUR_KEY"},
+    json={
+        "platforms": ["linkedin"],
+        "default_text": "Hello from Postsiva!",
+    },
+)
+```
+
+</CodeGroup>
+
+| Header | Required | Notes |
+|--------|----------|-------|
+| `X-API-Key` | Yes (or Bearer) | Workspace is resolved from the key. See [Authentication](/authentication). |
+| `Authorization: Bearer …` | Alternative | JWT session **or** `psk_live_…` key |
+| `X-Workspace-Id` | JWT only | Required with JWT; optional with API key (must match key workspace) |
+| `Content-Type` | Yes | `application/json` |
+
+<Note>
+Connect accounts first via [OAuth](/apis/oauth). Upload images and videos via [Media](/apis/media) and pass returned `media_id` values in post bodies.
+</Note>
+
+## Endpoints
+
+| Method | Path | Post type |
+|--------|------|-----------|
+| `POST` | `/unified/post/text` | Text only |
+| `POST` | `/unified/post/image` | Single image |
+| `POST` | `/unified/post/carousel` | 2–20 images |
+| `POST` | `/unified/post/video` | Video |
+
+Each path accepts the same cross-cutting fields; type-specific fields are validated per route.
+
+## Common body fields
+
+These apply to all four post types unless noted.
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `platforms` | `string[]` | Yes | One or more: `linkedin`, `facebook`, `instagram`, `threads`, `tiktok`, `youtube`, `pinterest`, `bluesky` (availability varies by post type) |
+| `default_text` | `string` | Text: yes; others: optional | Default caption/text (max 3000). Used unless a platform override replaces it |
+| `visibility` | `string` | No | `PUBLIC` (default) or `CONNECTIONS` — LinkedIn |
+| `scheduled_time` | `string` | No | ISO 8601 UTC, e.g. `2026-07-10T14:30:00Z` |
+| `draft` | `boolean` | No | `false` (default). If `true` and `draft_platforms` omitted, **all** platforms save as draft |
+| `draft_platforms` | `string[]` | No | Subset of `platforms` to save as draft; others publish immediately |
+| `board_id` | `string` | No | Top-level Pinterest board id fallback |
+
+### Platform override objects
+
+Nest platform-specific fields under the platform key. Overrides win over unified defaults for that network only.
+
+| Key | Common fields |
+|-----|---------------|
+| `linkedin` | `linkedin_text`, `linkedin_page_ids`, `post_to_personal`, `linkedin_page_texts`, `linkedin_page_images`, `visibility`, `scheduled_time`, `thumbnail_image_id`, `generate_thumbnail_from_content` |
+| `facebook` | **`facebook_page_ids`** (required when `facebook` is in `platforms`), `facebook_page_texts`, `facebook_page_images`, `scheduled_time` |
+| `instagram` | `instagram_text`, `instagram_image_id`, `scheduled_time` |
+| `threads` | `threads_text` (max 500), `threads_image_id` |
+| `tiktok` | `tiktok_text`, `tiktok_title`, `privacy_level`, `disable_comment`, `auto_add_music`, `cover_index` |
+| `youtube` | **`youtube_title`** (required for YouTube video), `youtube_description`, `youtube_playlist_id`, `thumbnail_image_id` |
+| `pinterest` | **`board_id`** (required for pin), `pinterest_text`, `pinterest_description`, `pinterest_image_id` |
+
+### LinkedIn targeting
+
+| Field | Description |
+|-------|-------------|
+| `linkedin.linkedin_page_ids` | Org/page IDs to post to. Omit = personal profile only |
+| `linkedin.post_to_personal` | When pages are set: omitted/`false` = pages only; `true` = personal **and** each page |
+| `linkedin.linkedin_text` | Text for personal profile; fallback for pages not in `linkedin_page_texts` |
+| `linkedin.linkedin_page_texts` | Map of `page_id → text` for per-page copy |
+
+### Facebook pages
+
+Facebook posts **always** target Pages (not personal profiles). You must supply page IDs:
+
+```json
+{
+  "platforms": ["facebook"],
+  "default_text": "Weekly update",
+  "facebook": {
+    "facebook_page_ids": ["123456789012345"],
+    "facebook_page_texts": {
+      "123456789012345": "Custom copy for this page"
+    }
+  }
+}
+```
+
+## POST /unified/post/text
+
+Text-only posts. Supported platforms: `linkedin`, `facebook`, `threads`, `bluesky`.
+
+| Field | Required | Notes |
+|-------|----------|-------|
+| `default_text` | Yes | 1–3000 characters |
+| `platforms` | Yes | Min length 1 |
+
+<CodeGroup>
+
+```bash cURL
+curl -X POST "https://backend.postsiva.com/unified/post/text" \
+  -H "X-API-Key: psk_live_YOUR_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "platforms": ["linkedin", "threads"],
+    "default_text": "Shipping a new API docs site today.",
+    "linkedin": {
+      "linkedin_page_ids": ["10987654321"],
+      "linkedin_text": "LinkedIn-specific angle on the launch."
+    },
+    "threads": {
+      "threads_text": "Short Threads version (max 500)."
+    }
+  }'
+```
+
+```javascript JavaScript
+await fetch("https://backend.postsiva.com/unified/post/text", {
+  method: "POST",
+  headers: {
+    "X-API-Key": process.env.POSTSIVA_KEY,
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({
+    platforms: ["linkedin", "threads"],
+    default_text: "Shipping a new API docs site today.",
+    linkedin: {
+      linkedin_page_ids: ["10987654321"],
+      linkedin_text: "LinkedIn-specific angle on the launch.",
+    },
+    threads: { threads_text: "Short Threads version (max 500)." },
+  }),
+});
+```
+
+```python Python
+import requests
+
+requests.post(
+    "https://backend.postsiva.com/unified/post/text",
+    headers={"X-API-Key": "psk_live_YOUR_KEY"},
+    json={
+        "platforms": ["linkedin", "threads"],
+        "default_text": "Shipping a new API docs site today.",
+        "linkedin": {
+            "linkedin_page_ids": ["10987654321"],
+            "linkedin_text": "LinkedIn-specific angle on the launch.",
+        },
+        "threads": {"threads_text": "Short Threads version (max 500)."},
+    },
+)
+```
+
+</CodeGroup>
+
+## POST /unified/post/image
+
+Single-image posts. Provide **`default_image_id`** OR **`default_image_url`** (at least one required).
+
+| Field | Required | Notes |
+|-------|----------|-------|
+| `default_image_id` | One of id/url | UUID from [POST /media/upload](/apis/media) |
+| `default_image_url` | One of id/url | Public HTTPS image URL |
+| `platforms` | Yes | e.g. `linkedin`, `facebook`, `instagram`, `threads`, `tiktok`, `pinterest` |
+
+```json
+{
+  "platforms": ["instagram", "linkedin"],
+  "default_image_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+  "default_text": "Product screenshot",
+  "pinterest": {
+    "board_id": "9876543210987654321",
+    "pinterest_text": "Pin title"
+  }
+}
+```
+
+<Note>
+Threads and Bluesky accept `default_image_url` / `video_url` — Postsiva uploads the file first, then posts using the returned `media_id`. Carousel posts still require `image_ids` from [Media](/apis/media).
+</Note>
+
+## POST /unified/post/carousel
+
+Multi-image carousel. **`image_ids`** required: **2–20** UUIDs from media upload.
+
+| Field | Required | Notes |
+|-------|----------|-------|
+| `image_ids` | Yes | Array of 2–20 `media_id` values |
+| `platforms` | Yes | `linkedin`, `facebook`, `instagram`, `threads`, `tiktok`, `pinterest` |
+
+```json
+{
+  "platforms": ["instagram", "facebook"],
+  "image_ids": [
+    "11111111-1111-1111-1111-111111111111",
+    "22222222-2222-2222-2222-222222222222"
+  ],
+  "default_text": "Swipe through our launch gallery",
+  "facebook": {
+    "facebook_page_ids": ["123456789012345"]
+  }
+}
+```
+
+## POST /unified/post/video
+
+Video posts. Provide **`video_id`** OR **`video_url`** (at least one required).
+
+| Field | Required | Notes |
+|-------|----------|-------|
+| `video_id` | One of id/url | From [POST /media/upload](/apis/media) (`media_type=video`) |
+| `video_url` | One of id/url | Direct HTTPS video URL |
+| `platforms` | Yes | `linkedin`, `facebook`, `instagram`, `threads`, `tiktok`, `youtube`, `pinterest`, `bluesky` |
+| `youtube.youtube_title` | YouTube only | Required when `youtube` is in `platforms` (or use `default_text` as title fallback) |
+| `pinterest.board_id` | Pinterest only | Required when `pinterest` is in `platforms` |
+
+```json
+{
+  "platforms": ["youtube", "linkedin"],
+  "video_id": "33333333-3333-3333-3333-333333333333",
+  "default_text": "Demo walkthrough",
+  "youtube": {
+    "youtube_title": "Postsiva API demo — full walkthrough",
+    "youtube_description": "How to publish from one JSON body."
+  },
+  "linkedin": {
+    "linkedin_page_ids": ["10987654321"],
+    "post_to_personal": true
+  }
+}
+```
+
+## Drafts and scheduling
+
+| Mode | How |
+|------|-----|
+| **Publish now** | Omit `draft`, `draft_platforms`, and `scheduled_time` |
+| **Save all as draft** | `"draft": true` |
+| **Mixed draft + publish** | `"draft_platforms": ["linkedin"]` with `platforms: ["linkedin","facebook"]` — LinkedIn draft, Facebook publishes |
+| **Schedule** | Set `scheduled_time` (ISO UTC) on the body or inside a platform override |
+
+<Note>
+Schedule-only workflows without immediate publish can also use `POST /unified/scheduled-posts` (same body shape, `scheduled_time` required, `draft` not allowed on that route).
+</Note>
+
+When drafts are saved, you receive draft objects instead of live post IDs. Publish drafts from the Postsiva app or scheduled-posts APIs.
+
+## Response shapes
+
+### Single platform
+
+```json
+{
+  "success": true,
+  "message": "Post created",
+  "post": {
+    "platform": "linkedin",
+    "post_id": "urn:li:share:7123456789012345678",
+    "permalink": "https://www.linkedin.com/feed/update/..."
+  }
+}
+```
+
+### Multiple platforms
+
+Each platform runs in parallel. Partial success is possible.
+
+```json
+{
+  "results": [
+    {
+      "platform": "linkedin",
+      "success": true,
+      "message": "Posted",
+      "post": { "post_id": "urn:li:share:7123456789012345678" }
+    },
+    {
+      "platform": "facebook",
+      "success": false,
+      "message": "Page token expired",
+      "error": "OAUTH_ERROR"
+    }
+  ]
+}
+```
+
+### Draft responses
+
+```json
+{
+  "success": true,
+  "message": "Saved as drafts",
+  "drafts": [
+    {
+      "platform": "linkedin",
+      "draft_id": "d4e5f6a7-b8c9-0123-def0-456789abcdef",
+      "status": "draft"
+    }
+  ]
+}
+```
+
+### Mixed draft + publish
+
+```json
+{
+  "success": true,
+  "message": "Drafts and posts completed",
+  "drafts": [{ "platform": "linkedin", "draft_id": "..." }],
+  "results": [{ "platform": "facebook", "success": true, "post": { "post_id": "..." } }]
+}
+```
+
+## MCP equivalent
+
+Use the **`publish`** tool on [Unified MCP](/mcp/tools) with the same fields (`post_type`, `platforms`, `default_text`, media ids, `draft`, `scheduled_time`, `platform_overrides_json`).
+
+```
+https://mcp.postsiva.com/mcp
+```
+
+Auth: `X-API-Key: psk_live_…` or `?apikey=psk_live_…`
+
+## Related
+
+- [Posting parameters (complete)](/apis/posting-parameters) — all LinkedIn / Facebook / IG / TikTok / YouTube / Threads / Pinterest fields
+- [Complete setup](/guides/complete-setup) — connect accounts in UI or via API, then automate
+- [Media upload](/apis/media) — get `media_id` before image/video/carousel posts
+- [OAuth](/apis/oauth) — connect platforms before posting
+- [Posts](/apis/posts) — read published content and stats
+- [Authentication](/authentication) — API key scopes and plan gates

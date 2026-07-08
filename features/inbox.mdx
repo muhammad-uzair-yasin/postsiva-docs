@@ -1,0 +1,37 @@
+---
+title: Inbox & Comments
+description: Unified comments inbox — list, thread replies, and respond across connected platforms.
+---
+
+The **Inbox** (Starter+) aggregates comments from connected accounts so you can read and reply without opening each network.
+
+## Capabilities
+
+- List recent comments across platforms
+- Fetch replies for a comment thread
+- Reply as the connected Page / profile
+- Optional AI-assisted reply generation in the app
+
+## REST
+
+```bash
+# List comments
+curl "https://backend.postsiva.com/unified/comments?limit=20" \
+  -H "X-API-Key: psk_live_YOUR_KEY"
+
+# Reply
+curl -X POST "https://backend.postsiva.com/unified/comments/reply" \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: psk_live_YOUR_KEY" \
+  -d '{"platform":"linkedin","comment_id":"...","text":"Thanks for the feedback!"}'
+```
+
+Full reference: [Comments API](/apis/comments).
+
+## AI Watcher
+
+For automated monitoring, lead detection, and auto-replies on specific posts, see [AI Watcher](/features/ai-watcher) (`/unified/ai-autoreplier/*`, Pro).
+
+## Plan gate
+
+Requires `inbox_enabled` (Starter / Pro).

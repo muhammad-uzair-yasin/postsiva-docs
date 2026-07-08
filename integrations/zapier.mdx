@@ -1,0 +1,178 @@
+---
+title: Zapier Integration
+description: Connect Postsiva to Zapier with Webhooks and Code steps — API key auth pattern and example Zaps.
+---
+
+Zapier has no native Postsiva app yet. Use **Webhooks by Zapier** plus **Code by Zapier** (or Formatter) to call the REST API with your workspace key.
+
+## Prerequisites
+
+- Postsiva **Pro** plan with API key
+- Zapier plan that includes Webhooks (usually Professional+)
+- Connected social accounts in Postsiva
+
+## Authentication pattern
+
+Every Zapier HTTP call needs:
+
+| Header | Value |
+|--------|-------|
+| `X-API-Key` | `psk_live_YOUR_KEY` |
+| `Content-Type` | `application/json` |
+
+Store the key in Zapier **Storage** or an environment variable — never hardcode in shared Zaps.
+
+## Zap 1: New row → LinkedIn post
+
+**Trigger:** Google Sheets — New Spreadsheet Row
+
+**Action:** Webhooks by Zapier — POST
+
+| Field | Value |
+|-------|-------|
+| URL | `https://backend.postsiva.com/unified/post/text` |
+| Payload type | JSON |
+| Data | See below |
+
+```json
+{
+  "platforms": ["linkedin"],
+  "default_text": "{{1.Caption}}"
+}
+```
+
+Headers:
+
+```
+X-API-Key: psk_live_YOUR_KEY
+Content-Type: application/json
+```
+
+## Zap 2: Typeform → draft for review
+
+Save as draft instead of publishing immediately:
+
+```json
+{
+  "platforms": ["linkedin", "threads"],
+  "default_text": "{{1.Answer}}",
+  "draft": true
+}
+```
+
+Add a second Zap with manual approval → `POST /unified/drafts/{id}/publish`.
+
+## Zap 3: Code step for multi-platform
+
+When you need logic (truncate for Bluesky, add Page IDs):
+
+**Trigger:** Any app
+
+**Action:** Code by Zapier (Python)
+
+```python
+import requests
+
+api_key = "psk_live_YOUR_KEY"  # Use Zapier Storage in production
+caption = input_data["caption"]
+
+# Truncate for Bluesky if cross-posting
+bluesky_caption = caption[:300]
+
+response = requests.post(
+    "https://backend.postsiva.com/unified/post/text",
+    headers={
+        "X-API-Key": api_key,
+        "Content-Type": "application/json",
+    },
+    json={
+        "platforms": ["linkedin", "bluesky"],
+        "default_text": caption,
+    },
+)
+output = {"status": response.status_code, "body": response.text}
+```
+
+Map Code step output fields in a follow-up action.
+
+## Zap 4: Schedule from Airtable
+
+**Trigger:** Airtable — New Record
+
+**Action:** Webhooks POST
+
+```json
+{
+  "platforms": ["instagram"],
+  "default_text": "{{1.fields.Caption}}",
+  "default_image_id": "{{1.fields.MediaId}}",
+  "scheduled_time": "{{1.fields.PublishAt}}"
+}
+```
+
+`PublishAt` must be ISO 8601 UTC (e.g. `2026-07-10T14:30:00Z`).
+
+## Zap 5: Check connection status daily
+
+**Trigger:** Schedule by Zapier — Every Day
+
+**Action:** Webhooks GET
+
+```
+URL: https://backend.postsiva.com/unified/oauth/token
+Headers: X-API-Key: psk_live_YOUR_KEY
+```
+
+**Filter:** Continue only if a platform shows disconnected → send alert email.
+
+## Mixed draft + publish
+
+Use `draft_platforms` in a Code step:
+
+```python
+payload = {
+    "platforms": ["linkedin", "facebook", "threads"],
+    "default_text": caption,
+    "draft_platforms": ["linkedin"],
+    "facebook": {"facebook_page_ids": [page_id]},
+}
+```
+
+LinkedIn drafts; Facebook and Threads publish immediately.
+
+## Handling responses
+
+Postsiva returns per-platform results in multi-platform posts:
+
+```json
+{
+  "results": [
+    {"platform": "linkedin", "success": true, "post_id": "..."},
+    {"platform": "bluesky", "success": false, "error": "NOT_CONNECTED"}
+  ]
+}
+```
+
+In Zapier, add a **Filter** or **Paths** step to branch on `success` fields.
+
+## Limitations
+
+| Limitation | Workaround |
+|------------|------------|
+| No native OAuth in Zapier | Connect accounts in Postsiva app first |
+| File upload | Upload to Postsiva separately; pass `media_id` |
+| Binary media in Webhooks | Use Code step with `requests` multipart upload |
+| Real-time post status | Poll `GET /unified/scheduled-posts` on schedule |
+
+## MCP for AI Zaps
+
+For AI-heavy workflows, consider n8n with MCP or Cursor with Postsiva MCP instead of Zapier Code steps.
+
+See [n8n integration](/integrations/n8n) and [MCP overview](/mcp/overview).
+
+## Related
+
+<CardGroup cols={2}>
+  <Card title="cURL recipes" href="/integrations/curl">Shell examples</Card>
+  <Card title="Authentication" href="/authentication">API key scopes</Card>
+</CardGroup>

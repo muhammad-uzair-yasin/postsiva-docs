@@ -1,0 +1,138 @@
+---
+title: Scheduling
+description: Schedule posts with scheduled_time (ISO 8601 UTC) on post endpoints — list queue via GET /unified/scheduled-posts.
+---
+
+Schedule posts for future publication by adding **`scheduled_time`** to any post endpoint, or use the dedicated schedule-only API.
+
+## scheduled_time format
+
+Use **ISO 8601 UTC**:
+
+```
+2026-07-10T14:30:00Z
+2026-07-10T14:30:00+00:00
+```
+
+| Rule | Detail |
+|------|--------|
+| Timezone | Stored and compared in **UTC** |
+| Future only | Must be in the future at submission time |
+| Worker | Celery worker publishes when `scheduled_time <= now_utc` |
+
+<Warning>
+  Ensure your server clock and database use UTC for scheduling. Past-due posts that never publish often indicate a timezone mismatch.
+</Warning>
+
+## Schedule on post endpoints
+
+Add `scheduled_time` to `POST /unified/post/text`, `/image`, `/video`, or `/carousel`:
+
+```bash
+curl -X POST "https://backend.postsiva.com/unified/post/text" \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: psk_live_YOUR_KEY" \
+  -d '{
+    "platforms": ["linkedin"],
+    "default_text": "This goes live tomorrow at 2:30 PM UTC.",
+    "scheduled_time": "2026-07-10T14:30:00Z"
+  }'
+```
+
+Works with platform overrides, multi-platform posts, and media IDs.
+
+### Mixed draft + publish
+
+Use `draft_platforms` to schedule some platforms and publish others immediately — see [Drafts](/guides/drafts).
+
+## Schedule-only endpoint
+
+`POST /unified/scheduled-posts` accepts the same body shape as post endpoints but **`scheduled_time` is required**. Does not accept `draft` or `draft_platforms`.
+
+```bash
+curl -X POST "https://backend.postsiva.com/unified/scheduled-posts" \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: psk_live_YOUR_KEY" \
+  -d '{
+    "post_type": "image",
+    "platforms": ["instagram"],
+    "default_text": "Scheduled Instagram post.",
+    "default_image_id": "media-uuid",
+    "scheduled_time": "2026-07-15T09:00:00Z"
+  }'
+```
+
+## List scheduled posts (get_queued_posts)
+
+REST equivalent of MCP `get_queued_posts` with `type=scheduled`:
+
+```bash
+curl "https://backend.postsiva.com/unified/scheduled-posts?status=scheduled&limit=20" \
+  -H "X-API-Key: psk_live_YOUR_KEY"
+```
+
+| Query param | Values |
+|-------------|--------|
+| `platform` | Filter by platform slug |
+| `platform_user_id` | Filter by account (Page ID, org ID, etc.) |
+| `status` | `scheduled`, `published`, `failed`, `cancelled`, `publishing` |
+| `limit` | 1–100 |
+| `offset` | Pagination offset |
+
+Response includes `scheduled_time`, `scheduled_time_local`, and `scheduled_time_formatted` (workspace owner timezone).
+
+### MCP: get_queued_posts
+
+```
+get_queued_posts(type="scheduled", platform="linkedin", status="scheduled")
+```
+
+Set `type=all` to include drafts. See [MCP Tool Catalog](/mcp/tools).
+
+## Manage scheduled posts
+
+| Action | Method | Endpoint |
+|--------|--------|----------|
+| List | `GET` | `/unified/scheduled-posts` |
+| Update time | `PATCH` | `/unified/scheduled-posts/{id}` |
+| Delete | `DELETE` | `/unified/scheduled-posts/{id}` |
+| Publish now | `POST` | `/unified/scheduled-posts/{id}/publish-now` |
+| Move to draft | `POST` | `/unified/scheduled-posts/{id}/move-to-draft` |
+
+## Plan requirements
+
+Scheduling requires **`scheduling_enabled`** on your plan. Each scheduled post also consumes a **scheduled post credit**.
+
+Blocked requests return `403` with plan upgrade details — see [Postsiva errors](/errors/postsiva).
+
+## Video scheduling flow
+
+1. Request hits platform video endpoint with future `scheduled_time`
+2. Post saved to `scheduled_posts` table (not published immediately)
+3. Celery task enqueued with countdown = `scheduled_time - now`
+4. Worker publishes at due time and updates status
+
+## Example: multi-platform schedule
+
+```json
+{
+  "platforms": ["linkedin", "threads", "facebook"],
+  "default_text": "Coordinated launch.",
+  "default_image_id": "media-uuid",
+  "scheduled_time": "2026-08-01T16:00:00Z",
+  "facebook": {
+    "facebook_page_ids": ["756356074224043"]
+  },
+  "linkedin": {
+    "linkedin_page_ids": ["108813535"],
+    "post_to_personal": true
+  }
+}
+```
+
+## Related
+
+<CardGroup cols={2}>
+  <Card title="Drafts" href="/guides/drafts">Save without scheduling</Card>
+  <Card title="Platforms" href="/platforms/overview">Per-platform requirements</Card>
+</CardGroup>
