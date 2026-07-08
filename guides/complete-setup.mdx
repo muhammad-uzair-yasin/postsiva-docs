@@ -3,19 +3,23 @@ title: Complete setup flow
 description: Everything you need in the Postsiva UI, then how to connect accounts and automate with an API key or MCP — end to end.
 ---
 
-This guide walks you from **zero → connected social accounts → API key → your first automated post**. Use the **web app** for connect + keys (recommended), then use the **REST API** or **MCP** for everything else.
+This guide walks you from **zero → REST API ready**:
+
+1. **Sign up / log in** at [postsiva.com](https://postsiva.com)
+2. **Create a workspace**
+3. **Connect accounts** (Settings → Integrations)
+4. **Create API key** (Settings → API Keys) — use all REST APIs
+5. **Post / automate** via REST or MCP
 
 ```mermaid
 flowchart TD
-  A[Sign up / log in] --> B[Create or join workspace]
+  A[Sign up / log in at postsiva.com] --> B[Create workspace]
   B --> C[Upgrade to Pro]
-  C --> D[Connect social accounts]
-  D --> E[Create workspace API key]
-  E --> F[Upload media / post / analytics]
-  D -.->|or| G[POST /unified/oauth/url]
+  C --> D[Connect accounts in Integrations]
+  D --> E[Create API key]
+  E --> F[REST / MCP calls]
+  D -.->|optional| G[POST /unified/oauth/url]
   G --> D
-  E --> H[REST or MCP]
-  H --> F
 ```
 
 <Note>
@@ -28,11 +32,11 @@ flowchart TD
 
 Complete these in the web app at [postsiva.com](https://postsiva.com) (or your workspace URL).
 
-### 1. Sign up and open a workspace
+### 1. Sign up or log in
 
-1. Create an account (email OTP + password) or log in.
+1. Go to [postsiva.com](https://postsiva.com) — **sign up** or **log in**.
 2. Create a **workspace** (or accept an invite).
-3. Confirm you are in the correct workspace (top / workspace switcher). All OAuth tokens and posts are scoped to that workspace.
+3. Confirm the correct workspace in the switcher. All OAuth tokens, posts, and API keys are scoped to it.
 
 ### 2. Upgrade if you need API / MCP
 
@@ -55,9 +59,9 @@ Complete these in the web app at [postsiva.com](https://postsiva.com) (or your w
   If a platform is not connected in this workspace, posting and analytics return `NOT_CONNECTED` (or empty slices). Connect in the UI **or** via [OAuth API](/apis/oauth) below.
 </Warning>
 
-### 4. Create a workspace API key
+### 4. Create a workspace API key (use REST APIs)
 
-1. Open **Settings → API Keys**.
+1. Open **Settings → API Keys** (under Integrations / developer settings in the app).
 2. Click **Create API Key**.
 3. Set:
    - **Name** — e.g. `n8n production`
@@ -68,6 +72,8 @@ Complete these in the web app at [postsiva.com](https://postsiva.com) (or your w
      - `linkedin_posts` — **read-only** `GET /unified/posts` (LinkedIn)
 4. Copy the secret once: `psk_live_…` — it is **not** shown again.
 5. Store it in your password manager / secrets store (never in git).
+
+Use this key as `X-API-Key: psk_live_…` on **every REST request** to `https://backend.postsiva.com`. See [API Overview](/apis/overview).
 
 ### 5. (Optional) Copy MCP URL for Cursor / Claude
 

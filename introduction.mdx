@@ -43,18 +43,23 @@ Every feature available in the Postsiva web app is exposed programmatically:
 
 ## How to get started
 
+Use the **Postsiva web app** first, then call the **REST API** (or MCP) with your workspace API key.
+
 <Steps>
-  <Step title="Create a Postsiva account">
-    Sign up at [postsiva.com](https://postsiva.com) and create or join a workspace.
+  <Step title="Sign up or log in">
+    Go to [postsiva.com](https://postsiva.com) — create an account or log in.
   </Step>
-  <Step title="Connect social accounts">
-    Link platforms in **Settings → Integrations** (or via the OAuth API / MCP `manage_platform_connection`).
+  <Step title="Create a workspace">
+    Create a **workspace** (or join one via invite). All connected accounts, posts, and API keys belong to that workspace — use the workspace switcher to confirm you're in the right one.
+  </Step>
+  <Step title="Connect your social accounts">
+    Open **Settings → Integrations** and connect LinkedIn, Instagram, Facebook, TikTok, YouTube, Threads, Pinterest, Bluesky, etc. Finish OAuth for each network (Bluesky: handle + app password).
   </Step>
   <Step title="Create a workspace API key">
-    **Settings → API Keys** (Pro plan). Copy the `psk_live_…` secret — shown once.
+    Open **Settings → API Keys** (Pro plan). Create a key, copy `psk_live_…` once — this unlocks all [REST APIs](/apis/overview) and [MCP](/mcp/overview).
   </Step>
-  <Step title="Make your first call">
-    Follow the [Quickstart](/quickstart), or the full [Complete setup flow](/guides/complete-setup) (UI + programmatic connect + API key).
+  <Step title="Call the API">
+    Send requests to `https://backend.postsiva.com` with header `X-API-Key: psk_live_…`. Start with the [Quickstart](/quickstart) or [Complete setup](/guides/complete-setup).
   </Step>
 </Steps>
 
