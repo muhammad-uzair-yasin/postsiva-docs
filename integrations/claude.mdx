@@ -1,42 +1,72 @@
 ---
-title: Claude Desktop
-description: Connect Postsiva Unified MCP to Claude Desktop with your workspace API key.
+title: Claude
+description: Connect Postsiva MCP to Claude.ai (web) or Claude Code (CLI) with OAuth or an API key.
 ---
 
-Use Postsiva tools inside **Claude Desktop** via the Model Context Protocol (same server as Cursor).
+Use Postsiva tools inside **Claude** via the Model Context Protocol. There are **two** MCP URLs:
+
+| Client | URL | Upload |
+|--------|-----|--------|
+| **Claude.ai** (web) | `https://mcp.postsiva.com/web/mcp` | In-chat iframe → Postsiva storage → `media_id` / `public_url` |
+| **Claude Code** (CLI) | `https://mcp.postsiva.com/mcp` | `upload_media` + local `file_path` → run `curl_command` |
+
+Web search is **not** an MCP tool — Claude already has built-in search.
 
 ## Requirements
 
-- Pro plan with `mcp_enabled`
-- Workspace API key (`psk_live_…`)
-- Claude Desktop with MCP support
+- Postsiva plan with `mcp_enabled`
+- Claude account with **Connectors** support (web) or Claude Code (CLI)
+- Workspace membership (you pick the workspace during OAuth)
 
-## Config
+## Claude.ai — OAuth (recommended)
 
-Add to Claude Desktop MCP settings (JSON shape varies slightly by Claude version):
+Use the **web** MCP URL. Do **not** put an API key in the URL.
 
-```json
-{
-  "mcpServers": {
-    "postsiva": {
-      "url": "https://mcp.postsiva.com/mcp",
-      "headers": {
-        "X-API-Key": "psk_live_YOUR_KEY"
-      }
-    }
-  }
-}
+<Steps>
+  <Step title="Open Claude Connectors">
+    In Claude, open **Customize → Connectors** (or **Settings → Connectors**).
+  </Step>
+  <Step title="Add a custom connector">
+    Click **+** → **Add custom connector**.
+  </Step>
+  <Step title="Name and URL">
+    Name:
+
+    ```
+    Postsiva
+    ```
+
+    Remote MCP server URL (no query string):
+
+    ```
+    https://mcp.postsiva.com/web/mcp
+    ```
+
+    Leave **OAuth Client ID** / **Client Secret** empty for CIMD, **or** paste your Postsiva Claude credentials from the backend `.env`:
+
+    - `OAUTH_CLAUDE_CLIENT_ID`
+    - `OAUTH_CLAUDE_CLIENT_SECRET`
+  </Step>
+  <Step title="Connect and authorize">
+    Click **Connect**. Sign in to Postsiva, select a workspace, and allow access.
+  </Step>
+  <Step title="Use in chat">
+    Enable the Postsiva connector in a chat. To post an image/video/document, ask Claude to upload — the iframe widget stores media in Postsiva and returns `media_id` / `public_url` for `publish`.
+  </Step>
+</Steps>
+
+## Claude Code — API key
+
+```bash
+claude mcp add --transport http postsiva https://mcp.postsiva.com/mcp \
+  --header "X-API-Key: psk_live_YOUR_KEY"
 ```
 
-If your Claude build expects a query param instead:
-
-```
-https://mcp.postsiva.com/mcp?apikey=psk_live_YOUR_KEY
-```
+For local files: `upload_media(file_path=..., media_type=image|video|document)` → run returned `curl_command` → use `media_id` / `public_url` in `publish`.
 
 ## What Claude can do
 
-Same [MCP tool catalog](/mcp/tools): publish, posts, comments, analytics helpers, OAuth connect helpers, AI content, queue/drafts, web search.
+Same [MCP tool catalog](/mcp/tools): publish, posts, comments, analytics helpers, OAuth connect helpers, AI content, queue/drafts. Upload tools differ by URL (iframe vs curl). No web-search tool.
 
 ## Related
 

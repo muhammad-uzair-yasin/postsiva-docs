@@ -7,38 +7,41 @@ The **Postsiva Unified MCP** lets AI agents call Postsiva tools instead of hand-
 
 ## How it works
 
-1. Your MCP client connects to `https://mcp.postsiva.com/mcp` with your workspace API key.
-2. The agent calls tools (`publish`, `get_user_posts`, …).
-3. Each call resolves `workspace_id` from the key and invokes the shared LangChain tool layer.
+1. Your MCP client connects to the right endpoint:
+   - **CLI** (Cursor / Claude Code): `https://mcp.postsiva.com/mcp`
+   - **Web** (Claude.ai / ChatGPT): `https://mcp.postsiva.com/web/mcp`
+2. The agent calls tools (`publish`, `get_user_posts`, `upload_media`, …).
+3. Each call resolves `workspace_id` from the key/OAuth and invokes the shared tool layer.
 4. Results are JSON returned to the agent.
 
-There is no separate MCP behavior — quotas, plan gates, and platform rules match the REST API.
+There is no separate MCP business logic — quotas, plan gates, and platform rules match the REST API.
 
-## Endpoint
+## Endpoints
 
-```
-https://mcp.postsiva.com/mcp
-```
+| | URL |
+|--|-----|
+| CLI | `https://mcp.postsiva.com/mcp` |
+| Web | `https://mcp.postsiva.com/web/mcp` |
 
 - **Transport:** Streamable HTTP (stateless)
-- **Auth:** `X-API-Key: psk_live_…` or `?apikey=psk_live_…`
+- **Auth:** OAuth Bearer and/or `X-API-Key: psk_live_…`
 
 ## Who it's for
 
-- **Cursor / Claude Desktop** — manage social from your editor
+- **Claude.ai / ChatGPT** — web MCP with in-chat upload widget
+- **Cursor / Claude Code** — CLI MCP with curl upload
 - **n8n / automation** — AI Agent node with MCP
 - **Custom agents** — any MCP-compatible client
-- **Internal tools** — same surface as WhatsApp agent, different channel
 
 ## Requirements
 
 - **Pro plan** (`mcp_enabled`)
-- Valid workspace API key
+- Valid workspace API key or OAuth connector
 - Social accounts connected in that workspace
 
 ## Tool count
 
-**13 tools** — accounts, posting, queue, posts, analytics, comments, AI generation, platform connect/disconnect, web search.
+Core tools on both servers (accounts, posting, queue, posts, analytics, comments, AI, platform connect). **Upload** differs (iframe vs curl). **No** MCP web-search tool (hosts provide search).
 
 See the full [Tool catalog](/mcp/tools).
 
@@ -56,7 +59,7 @@ Use REST when you know the exact call; use MCP when an agent should decide which
 
 <CardGroup cols={2}>
   <Card title="Connect & setup" href="/mcp/connect">Cursor, Claude, headers</Card>
-  <Card title="Tool catalog" href="/mcp/tools">All 13 tools</Card>
+  <Card title="Tool catalog" href="/mcp/tools">All tools</Card>
   <Card title="Cursor guide" href="/mcp/cursor">Postsiva MCP in Cursor</Card>
   <Card title="n8n" href="/mcp/n8n">AI Agent + MCP</Card>
 </CardGroup>

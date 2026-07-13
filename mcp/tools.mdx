@@ -1,9 +1,14 @@
 ---
 title: MCP Tool Catalog
-description: All 13 tools on the Postsiva Unified MCP server, grouped by domain.
+description: Tools on Postsiva CLI and Web MCP servers, grouped by domain.
 ---
 
-The Unified MCP exposes **13 tools**. Each maps to the same backend as REST/GPT Actions (except `web_search_duckduckgo`, MCP-only).
+Both MCP servers share the same **core** tools. **Upload** differs. There is **no** `web_search_duckduckgo` tool (Claude/ChatGPT/Cursor already search).
+
+| Server | URL | Upload |
+|--------|-----|--------|
+| CLI | `/mcp` | `upload_media` + local `file_path` → curl |
+| Web | `/web/mcp` | `upload_media` iframe + `complete_media_upload` |
 
 ## Accounts
 
@@ -18,32 +23,38 @@ The Unified MCP exposes **13 tools**. Each maps to the same backend as REST/GPT 
 
 | Tool | Purpose |
 |------|---------|
-| `publish` | Publish, draft, or schedule text/image/video (`post_type`, `platforms`, `draft`, `scheduled_time`, `platform_overrides_json`) |
-| `get_user_posts` | Recent posts per platform (`limit`, `refresh_posts`, `refresh_stats`, `platforms`, page/org ids) |
-| `get_queued_posts` | Scheduled posts and/or drafts (`type`: scheduled \| draft \| all) |
+| `publish` | Publish, draft, or schedule text/image/video/document |
+| `get_user_posts` | Recent posts per platform |
+| `get_queued_posts` | Scheduled posts and/or drafts |
+
+### Media before publish
+
+For **image / video / document** posts: call **`upload_media`** first so files land in Postsiva storage, then pass **`media_id` / `public_url`** into `publish`.
 
 ### `publish` highlights
 
 - `scope`: `feed` (personal) or `pages` (Facebook Pages / LinkedIn orgs)
-- Media: `default_image_id`, `default_image_url`, `video_id`, `video_url`
-- Text limits enforced per platform (LinkedIn 3000, Bluesky 300, etc.)
+- Media: `default_image_id`, `default_image_url`, `video_id`, `video_url`, `document_id`, `document_url`
 
-### LinkedIn personal refresh
+## Upload
 
-When `platforms=["linkedin"]` with no org ids, `refresh_posts=true` is expensive (Apify) and **limit caps at 2**. Use cached posts unless the user explicitly asks to sync live.
+| Tool | Where | Purpose |
+|------|-------|---------|
+| `upload_media` | Both | Web: open iframe. CLI: return curl for `file_path` |
+| `complete_media_upload` | Web only | Confirm widget upload → `media_id` / `public_url` for publish |
 
 ## Inbox
 
 | Tool | Purpose |
 |------|---------|
-| `get_comments` | Comments across recent posts or one post (`post_id` + `platform`) |
-| `reply_to_comment` | Reply on linkedin, facebook, instagram, youtube, threads, bluesky, tiktok |
+| `get_comments` | Comments across recent posts or one post |
+| `reply_to_comment` | Reply on supported networks |
 
 ## Analytics
 
 | Tool | Purpose |
 |------|---------|
-| `get_unified_analytics` | Workspace totals + per-platform likes, comments, reach, engagement (stored data, no live API fan-out) |
+| `get_unified_analytics` | Workspace totals + per-platform metrics (stored data) |
 
 ## AI content
 
@@ -52,21 +63,16 @@ When `platforms=["linkedin"]` with no org ids, `refresh_posts=true` is expensive
 | `idea_to_content` | Topic → per-platform post copy |
 | `media_to_content` | Image/video URL → caption |
 | `analyze_media` | Describe/analyze image or video URL |
-| `content_to_image` | Post text → generated images (`image_url`, `media_id` in response) |
+| `content_to_image` | Post text → generated images |
 
-None of the AI tools publish automatically — chain with `publish` if needed.
-
-## Utility
-
-| Tool | Purpose |
-|------|---------|
-| `web_search_duckduckgo` | Live web search (MCP only; not in GPT Actions) |
+None of the AI tools publish automatically — chain with `upload_media` / `publish` if needed.
 
 ## REST equivalents
 
 | MCP tool | REST |
 |----------|------|
-| `publish` | `POST /unified/post/text` \| `image` \| `video` |
+| `publish` | `POST /unified/post/text` \| `image` \| `video` \| `document` |
+| `upload_media` | `POST /media/upload` |
 | `get_user_posts` | `GET /unified/posts` |
 | `get_queued_posts` | `GET /unified/scheduled-posts` + drafts |
 | `get_unified_analytics` | `GET /unified/analytics` |
@@ -79,15 +85,4 @@ None of the AI tools publish automatically — chain with `publish` if needed.
 
 ## GPT Actions
 
-ChatGPT Custom GPT uses `POST /unified/gpt-actions/{tool_name}` with the same JSON bodies. Excludes `web_search_duckduckgo`.
-
-OpenAPI: `GET https://backend.postsiva.com/openapi/chatgpt-actions.json`
-
-## Not exposed on MCP
-
-- `clear_workspace_chat_history` — WhatsApp/website only
-- Billing, workspace admin, team invites — JWT routes only
-
-## Authoritative list
-
-Query `tools/list` on your MCP connection after auth for the live set.
+Custom GPT Actions are a separate OpenAPI surface (`/unified/gpt-actions/*`), not these MCP URLs. See [ChatGPT](/mcp/chatgpt).

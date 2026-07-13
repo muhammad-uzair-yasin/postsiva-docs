@@ -1,28 +1,31 @@
 ---
 title: Connect to MCP
-description: Transport, endpoint, and authentication for the Postsiva Unified MCP server.
+description: Transport, endpoints, and authentication for Postsiva CLI and Web MCP servers.
 ---
 
-Connect any MCP client that supports **Streamable HTTP** to Postsiva.
+Postsiva runs **two** Streamable HTTP MCP endpoints:
 
-## Endpoint
+| Audience | Endpoint | Auth |
+|----------|----------|------|
+| **CLI** (Cursor, Claude Code) | `https://mcp.postsiva.com/mcp` | API key header (or OAuth) |
+| **Web** (Claude.ai, ChatGPT MCP Apps) | `https://mcp.postsiva.com/web/mcp` | OAuth (recommended) or API key |
 
-```
-https://mcp.postsiva.com/mcp
-```
-
-Stateless — no session between calls.
+Stateless — no session between calls. Built-in host search is used instead of an MCP search tool.
 
 ## Authentication
 
-**Required:** workspace API key
+**API key** (CLI-friendly):
 
 | Method | Example |
 |--------|---------|
 | Header | `X-API-Key: psk_live_YOUR_KEY` |
-| Query param | `https://mcp.postsiva.com/mcp?apikey=psk_live_YOUR_KEY` |
+| Query param | `https://mcp.postsiva.com/mcp?api-key=psk_live_YOUR_KEY` |
+
+Also accepted: `?apikey=` / `?api_key=` (same key).
 
 The key must belong to a workspace on the **Pro** plan with MCP enabled.
+
+**OAuth:** Claude.ai / ChatGPT connect via Connectors — JWT audience must match the MCP URL (`/mcp` or `/web/mcp`).
 
 ### Errors
 
@@ -34,7 +37,7 @@ Wrong plan → upgrade message referencing postsiva.com.
 
 1. **Cursor Settings → MCP → Add server**
 2. Type: **HTTP** (Streamable HTTP)
-3. URL: `https://mcp.postsiva.com/mcp`
+3. URL: `https://mcp.postsiva.com/mcp` (**CLI**)
 4. Headers: `X-API-Key` = your `psk_live_…` key
 5. Restart Cursor or reload MCP
 
@@ -60,24 +63,14 @@ claude mcp add --transport http postsiva https://mcp.postsiva.com/mcp \
   --header "X-API-Key: psk_live_YOUR_KEY"
 ```
 
-Restart the client after changing keys.
+## Claude.ai (custom connector)
 
-## Claude Desktop
+1. **Settings → Connectors → Add connector → Add custom connector**
+2. **Name:** `Postsiva`
+3. **URL:** `https://mcp.postsiva.com/web/mcp` (**Web** — iframe upload)
+4. Connect with OAuth (prefer no API key in the URL)
 
-Add to MCP config (format varies by version):
-
-```json
-{
-  "mcpServers": {
-    "postsiva": {
-      "url": "https://mcp.postsiva.com/mcp",
-      "headers": {
-        "X-API-Key": "psk_live_YOUR_KEY"
-      }
-    }
-  }
-}
-```
+Full walkthrough: [Claude](/integrations/claude).
 
 ## Verify connection
 
@@ -85,16 +78,14 @@ Ask the agent:
 
 > What social accounts are connected to my workspace?
 
-It should call `get_accounts` and list linked platforms.
+## Media upload
 
-## Security
-
-- Do not commit keys to repos shared publicly
-- Use scoped keys when possible
-- Revoke keys from Settings → API Keys if compromised
+| MCP | Flow |
+|-----|------|
+| Web `/web/mcp` | `upload_media` → iframe → Postsiva storage → `media_id` / `public_url` → `publish` |
+| CLI `/mcp` | `upload_media(file_path=…)` → run `curl_command` → `media_id` / `public_url` → `publish` |
 
 ## Next
 
-- [Tool catalog](/mcp/tools) — all available tools
-- [Cursor guide](/mcp/cursor) — common workflows
-- [Authentication](/authentication) — scopes and plans
+- [Tool catalog](/mcp/tools)
+- [Cursor guide](/mcp/cursor)
