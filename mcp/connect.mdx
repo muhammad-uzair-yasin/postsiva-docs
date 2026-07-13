@@ -3,45 +3,39 @@ title: Connect to MCP
 description: Transport, endpoints, and authentication for Postsiva CLI and Web MCP servers.
 ---
 
-Postsiva runs **two** Streamable HTTP MCP endpoints:
+Postsiva runs **two** Streamable HTTP MCP endpoints. Auth rules differ by host:
 
-| Audience | Endpoint | Auth |
-|----------|----------|------|
-| **CLI** (Cursor, Claude Code) | `https://mcp.postsiva.com/mcp` | API key header (or OAuth) |
-| **Web** (Claude.ai, ChatGPT MCP Apps) | `https://mcp.postsiva.com/web/mcp` | OAuth (recommended) or API key |
+| Audience | Endpoint | Auth (required) |
+|----------|----------|-----------------|
+| **Claude.ai** | `https://mcp.postsiva.com/web/mcp` | **OAuth only** — API keys in the URL/headers will **not** work (Claude drops them on tool calls) |
+| **ChatGPT** (MCP / UI connector) | `https://mcp.postsiva.com/web/mcp` | API key as **query param** (`?api-key=psk_live_…`) or OAuth |
+| **CLI** (Cursor, Claude Code) | `https://mcp.postsiva.com/mcp` | API key as **`X-API-Key` header** + MCP URL |
 
 Stateless — no session between calls. Built-in host search is used instead of an MCP search tool.
 
-## Authentication
+## Authentication cheat sheet
 
-**API key** (CLI-friendly):
-
-| Method | Example |
-|--------|---------|
-| Header | `X-API-Key: psk_live_YOUR_KEY` |
-| Query param | `https://mcp.postsiva.com/mcp?api-key=psk_live_YOUR_KEY` |
-
-Also accepted: `?apikey=` / `?api_key=` (same key).
+| Client | Do this | Do not |
+|--------|---------|--------|
+| Claude.ai | OAuth Connect → workspace | Put `?api-key=` on the connector URL |
+| ChatGPT UI / MCP | `https://mcp.postsiva.com/web/mcp?api-key=psk_live_…` | Rely on header-only if the client ignores headers |
+| Cursor / Claude Code | URL `…/mcp` + header `X-API-Key: psk_live_…` | Put the key only in the URL if you can use headers instead |
 
 The key must belong to a workspace on the **Pro** plan with MCP enabled.
 
-**OAuth:** Claude.ai / ChatGPT connect via Connectors — JWT audience must match the MCP URL (`/mcp` or `/web/mcp`).
-
 ### Errors
 
-Missing or invalid key → tool result with error message (e.g. *"API key required"* or *"Invalid or expired API key"*).
+Missing or invalid credentials → 401 / tool error (e.g. *"API key required"* or *"Invalid or expired API key"*).
 
 Wrong plan → upgrade message referencing postsiva.com.
 
-## Cursor
+## Cursor (CLI)
 
 1. **Cursor Settings → MCP → Add server**
 2. Type: **HTTP** (Streamable HTTP)
-3. URL: `https://mcp.postsiva.com/mcp` (**CLI**)
+3. URL: `https://mcp.postsiva.com/mcp`
 4. Headers: `X-API-Key` = your `psk_live_…` key
 5. Restart Cursor or reload MCP
-
-Or in `~/.cursor/mcp.json`:
 
 ```json
 {
@@ -56,21 +50,31 @@ Or in `~/.cursor/mcp.json`:
 }
 ```
 
-## Claude Code
+## Claude Code (CLI)
 
 ```bash
 claude mcp add --transport http postsiva https://mcp.postsiva.com/mcp \
   --header "X-API-Key: psk_live_YOUR_KEY"
 ```
 
-## Claude.ai (custom connector)
+## Claude.ai (web) — OAuth only
 
 1. **Settings → Connectors → Add connector → Add custom connector**
 2. **Name:** `Postsiva`
-3. **URL:** `https://mcp.postsiva.com/web/mcp` (**Web** — iframe upload)
-4. Connect with OAuth (prefer no API key in the URL)
+3. **URL:** `https://mcp.postsiva.com/web/mcp` — **no** query string, **no** API key
+4. Click **Connect** and complete Postsiva OAuth (pick workspace)
 
 Full walkthrough: [Claude](/integrations/claude).
+
+## ChatGPT UI — API key query param
+
+For ChatGPT connecting to the **web** MCP endpoint:
+
+```
+https://mcp.postsiva.com/web/mcp?api-key=psk_live_YOUR_KEY
+```
+
+Also accepted: `?apikey=` / `?api_key=` (same key). OAuth remains available for Custom GPT Actions (**Connect to Postsiva**).
 
 ## Verify connection
 
@@ -89,3 +93,5 @@ Ask the agent:
 
 - [Tool catalog](/mcp/tools)
 - [Cursor guide](/mcp/cursor)
+- [Claude](/integrations/claude)
+- [ChatGPT](/mcp/chatgpt)

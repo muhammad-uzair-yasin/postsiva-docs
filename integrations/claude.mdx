@@ -1,14 +1,14 @@
 ---
 title: Claude
-description: Connect Postsiva MCP to Claude.ai (web) or Claude Code (CLI) with OAuth or an API key.
+description: Connect Postsiva MCP to Claude.ai with OAuth only, or Claude Code with an API key header.
 ---
 
-Use Postsiva tools inside **Claude** via the Model Context Protocol. There are **two** MCP URLs:
+Use Postsiva tools inside **Claude** via the Model Context Protocol. There are **two** MCP URLs and **different auth rules**:
 
-| Client | URL | Upload |
-|--------|-----|--------|
-| **Claude.ai** (web) | `https://mcp.postsiva.com/web/mcp` | In-chat iframe → Postsiva storage → `media_id` / `public_url` |
-| **Claude Code** (CLI) | `https://mcp.postsiva.com/mcp` | `upload_media` + local `file_path` → run `curl_command` |
+| Client | URL | Auth | Upload |
+|--------|-----|------|--------|
+| **Claude.ai** (web) | `https://mcp.postsiva.com/web/mcp` | **OAuth only** (API key will **not** work) | In-chat iframe → Postsiva storage → `media_id` / `public_url` |
+| **Claude Code** (CLI) | `https://mcp.postsiva.com/mcp` | API key as **`X-API-Key` header** | `upload_media` + local `file_path` → run `curl_command` |
 
 Web search is **not** an MCP tool — Claude already has built-in search.
 
@@ -16,11 +16,11 @@ Web search is **not** an MCP tool — Claude already has built-in search.
 
 - Postsiva plan with `mcp_enabled`
 - Claude account with **Connectors** support (web) or Claude Code (CLI)
-- Workspace membership (you pick the workspace during OAuth)
+- Workspace membership (you pick the workspace during OAuth on Claude.ai)
 
-## Claude.ai — OAuth (recommended)
+## Claude.ai — OAuth only
 
-Use the **web** MCP URL. Do **not** put an API key in the URL.
+Use the **web** MCP URL with **no** API key in the URL or connector fields. Claude strips query API keys on tool POSTs, so key-based connectors fail.
 
 <Steps>
   <Step title="Open Claude Connectors">
@@ -36,7 +36,7 @@ Use the **web** MCP URL. Do **not** put an API key in the URL.
     Postsiva
     ```
 
-    Remote MCP server URL (no query string):
+    Remote MCP server URL (**no** query string, **no** `api-key`):
 
     ```
     https://mcp.postsiva.com/web/mcp
@@ -55,7 +55,7 @@ Use the **web** MCP URL. Do **not** put an API key in the URL.
   </Step>
 </Steps>
 
-## Claude Code — API key
+## Claude Code — API key header + CLI URL
 
 ```bash
 claude mcp add --transport http postsiva https://mcp.postsiva.com/mcp \

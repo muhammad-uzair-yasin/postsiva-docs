@@ -1,11 +1,29 @@
 ---
-title: ChatGPT Custom GPT
-description: Connect a ChatGPT Custom GPT to Postsiva via GPT Actions and OAuth — publish, analytics, and AI content from ChatGPT.
+title: ChatGPT
+description: Connect ChatGPT to Postsiva — Custom GPT with OAuth, or API key for private testing.
 ---
 
-Build a **Custom GPT** that manages your Postsiva workspace: list accounts, generate content, publish posts, read analytics, and reply to comments — using the same tools as MCP and the WhatsApp agent.
+Use **Postsiva Social Media Manager** in ChatGPT to list accounts, generate content, publish posts, read analytics, and reply to comments.
 
 Requires **Pro plan** with `gpt_app_enabled`.
+
+---
+
+## Connect (recommended)
+
+<Steps>
+  <Step title="Open the Postsiva GPT">
+    Open [Postsiva Social Media Manager](https://chatgpt.com/g/g-69ad8aedce9c8191b2d359b425f05ed2-postsiva-social-media-manager) in ChatGPT, or create your own Custom GPT (steps below).
+  </Step>
+  <Step title="Connect your workspace">
+    Click **Connect to Postsiva**, sign in, and select the workspace ChatGPT should manage.
+  </Step>
+  <Step title="Start chatting">
+    Ask for connected accounts, drafts, schedules, or analytics — for example:
+
+    > What social accounts are linked to my workspace?
+  </Step>
+</Steps>
 
 ---
 
@@ -33,7 +51,7 @@ Full API reference: [GPT Actions](/apis/gpt-actions)
 
 ---
 
-## Create the Custom GPT
+## Create your own Custom GPT
 
 <Steps>
   <Step title="Open GPT Builder">
@@ -159,13 +177,22 @@ GPT calls: `get_unified_analytics`, optionally `get_user_posts` with `refresh_st
 
 ## GPT Actions vs MCP
 
-| | Custom GPT | MCP (Cursor) |
-|---|------------|--------------|
-| Auth | OAuth (user-facing) | API key |
-| Web search | No | Yes (`web_search_duckduckgo`) |
-| Audience | Non-technical users | Developers |
-| OpenAPI | Required import | MCP tool list |
-| Timeout | 120 seconds | Client-defined |
+| | Custom GPT (Actions) | ChatGPT MCP (web) | Claude.ai | Cursor / Claude Code |
+|---|------------|-------------------|-----------|----------------------|
+| URL / surface | `/unified/gpt-actions/*` | `https://mcp.postsiva.com/web/mcp` | `https://mcp.postsiva.com/web/mcp` | `https://mcp.postsiva.com/mcp` |
+| Auth | OAuth (Connect to Postsiva) | API key as **`?api-key=`** query (or OAuth) | **OAuth only** (API key will not work) | API key as **`X-API-Key` header** |
+| Upload | See Actions / browser flows | Iframe widget on web MCP | Iframe widget | curl + `file_path` |
+| Web search | No (host search) | No (host search) | No (host search) | No (host search) |
+
+### ChatGPT MCP — API key query param
+
+```
+https://mcp.postsiva.com/web/mcp?api-key=psk_live_YOUR_KEY
+```
+
+Also accepted: `?apikey=` / `?api_key=`. Do **not** use this pattern for Claude.ai.
+
+For Claude custom connectors, see [Claude](/integrations/claude).
 
 ---
 
@@ -208,5 +235,6 @@ All Actions resolve workspace from the key. No OAuth UI required.
 <CardGroup cols={2}>
   <Card title="GPT Actions API" href="/apis/gpt-actions">Endpoint reference</Card>
   <Card title="Plans" href="/reference/plans">Pro requirements</Card>
+  <Card title="Claude connector" href="/integrations/claude">MCP in Claude</Card>
   <Card title="MCP overview" href="/mcp/overview">Developer agent integration</Card>
 </CardGroup>

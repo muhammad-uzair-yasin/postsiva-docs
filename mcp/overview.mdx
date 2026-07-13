@@ -18,13 +18,13 @@ There is no separate MCP business logic — quotas, plan gates, and platform rul
 
 ## Endpoints
 
-| | URL |
-|--|-----|
-| CLI | `https://mcp.postsiva.com/mcp` |
-| Web | `https://mcp.postsiva.com/web/mcp` |
+| | URL | Auth |
+|--|-----|------|
+| CLI (Cursor / Claude Code) | `https://mcp.postsiva.com/mcp` | API key **header** `X-API-Key` |
+| Web (Claude.ai) | `https://mcp.postsiva.com/web/mcp` | **OAuth only** |
+| Web (ChatGPT MCP) | `https://mcp.postsiva.com/web/mcp?api-key=…` | API key **query param** |
 
 - **Transport:** Streamable HTTP (stateless)
-- **Auth:** OAuth Bearer and/or `X-API-Key: psk_live_…`
 
 ## Who it's for
 
