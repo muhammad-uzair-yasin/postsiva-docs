@@ -41,7 +41,8 @@ For **image / video / document** posts: call **`upload_media`** first so files l
 | Tool | Where | Purpose |
 |------|-------|---------|
 | `upload_media` | Both | Web: open iframe. CLI: return curl for `file_path` |
-| `complete_media_upload` | Web only | Confirm widget upload → `media_id` / `public_url` for publish |
+
+Web hosts may keep an internal app-only completion helper for the iframe; it is **not** shown to the model.
 
 ## Inbox
 
