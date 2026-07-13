@@ -78,9 +78,10 @@ Use this key as `X-API-Key: psk_live_…` on **every REST request** to `https://
 ### 5. (Optional) Copy MCP URL for Cursor / Claude
 
 1. Open **Settings → MCP** (or Integrations → MCP).
-2. Use endpoint: `https://mcp.postsiva.com/mcp`
-3. Header: `X-API-Key: psk_live_YOUR_KEY`
-4. Follow [Connect MCP](/mcp/connect) and [Cursor](/mcp/cursor).
+2. **CLI** (Cursor / Claude Code): `https://mcp.postsiva.com/mcp` with header `X-API-Key: psk_live_YOUR_KEY`
+3. **Claude.ai**: `https://mcp.postsiva.com/web/mcp` with **OAuth only** (no API key)
+4. **ChatGPT MCP**: `https://mcp.postsiva.com/web/mcp?api-key=psk_live_YOUR_KEY`
+5. Follow [Connect MCP](/mcp/connect) and [Cursor](/mcp/cursor).
 
 ### 6. Smoke-test in the UI (recommended)
 

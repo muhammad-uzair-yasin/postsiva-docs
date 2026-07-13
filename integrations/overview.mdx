@@ -14,8 +14,8 @@ Postsiva is built for automation. Every feature available in the web app is acce
 | [n8n](/integrations/n8n) | Visual workflows, webhooks, cron | **Community nodes** (`n8n-nodes-postsiva`) or HTTP Request |
 | [Zapier](/integrations/zapier) | No-code automations | Webhooks + Code steps |
 | [Make.com](/integrations/make) | Scenarios with HTTP modules | API key header |
-| [Unified MCP](/mcp/overview) | AI agents (Cursor, Claude) | API key header or query param |
-| [Claude Desktop](/integrations/claude) | Conversational MCP | Same MCP URL + API key |
+| [Unified MCP](/mcp/overview) | AI agents (Cursor, Claude, ChatGPT) | See [Connect](/mcp/connect) — CLI header / Claude OAuth / ChatGPT `?api-key=` |
+| [Claude](/integrations/claude) | Claude.ai (OAuth) + Claude Code (header) | Web `/web/mcp` OAuth; CLI `/mcp` + `X-API-Key` |
 | [GPT Actions](/apis/gpt-actions) | ChatGPT Custom GPT | Bearer API key |
 | [Chrome extension](/integrations/chrome-extension) | LinkedIn repost UI | App login (Starter+) |
 | [WhatsApp agent](/integrations/whatsapp) | Chat control on mobile | Pro WhatsApp link |
@@ -85,8 +85,8 @@ API keys may hit rate limits under heavy use. Response includes rate limit detai
   <Card title="cURL" icon="terminal" href="/integrations/curl">
     Copy-paste recipes for common operations.
   </Card>
-  <Card title="Claude Desktop" icon="robot" href="/integrations/claude">
-    Unified MCP inside Claude.
+  <Card title="Claude" icon="robot" href="/integrations/claude">
+    Claude.ai OAuth on `/web/mcp` · Claude Code API key on `/mcp`.
   </Card>
   <Card title="Chrome extension" icon="puzzle-piece" href="/integrations/chrome-extension">
     LinkedIn side-panel repost + AI.
