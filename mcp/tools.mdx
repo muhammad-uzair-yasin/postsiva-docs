@@ -63,10 +63,10 @@ Web hosts may keep an internal app-only completion helper for the iframe; it is 
 |------|---------|
 | `idea_to_content` | Topic → per-platform post copy |
 | `media_to_content` | Image/video URL → caption |
-| `analyze_media` | Describe/analyze image or video URL |
-| `content_to_image` | Post text → generated images |
+| `analyze_media` | Describe/analyze image or video URL (**web**: analyzing animation UI) |
+| `content_to_image` | Post text → generated images (**web**: GPT-style generating animation UI → media_id/url → ask to publish) |
 
-None of the AI tools publish automatically — chain with `upload_media` / `publish` if needed.
+None of the AI tools publish automatically — chain with `publish` if needed. On **web MCP**, `content_to_image` and `analyze_media` open an in-chat MCP App while the tool runs.
 
 ## REST equivalents
 
