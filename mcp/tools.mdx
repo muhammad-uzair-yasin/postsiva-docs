@@ -5,10 +5,10 @@ description: Tools on Postsiva CLI and Web MCP servers, grouped by domain.
 
 Both MCP servers share the same **core** tools. **Upload** differs. There is **no** `web_search_duckduckgo` tool (Claude/ChatGPT/Cursor already search).
 
-| Server | URL | Upload |
-|--------|-----|--------|
-| CLI | `/mcp` | `upload_media` + local `file_path` → curl |
-| Web | `/web/mcp` | `upload_media` iframe + `complete_media_upload` |
+| Server | URL | Upload | Publish |
+|--------|-----|--------|---------|
+| CLI | `/mcp` | `upload_media` + local `file_path` → curl | JSON `publish` (immediate) |
+| Web | `/web/mcp` | `upload_media` iframe + `complete_media_upload` | **Preview App** — account toggles, then Post / Schedule / Draft / Reject |
 
 ## Accounts
 
@@ -33,7 +33,9 @@ For **image / video / document** posts: call **`upload_media`** first so files l
 
 ### `publish` highlights
 
-- `scope`: `feed` (personal) or `pages` (Facebook Pages / LinkedIn orgs)
+- **Web MCP:** opens a live preview (caption + image/video/document). User toggles **Facebook Pages**, **LinkedIn personal + orgs**, and other connected accounts **by name**, then Post / Schedule / Draft / Reject. Writing happens only after confirm (`complete_publish` is app-only).
+- **CLI MCP:** same JSON tool as before (`draft`, `scheduled_time`, overrides).
+- `scope`: `feed` (personal) or `pages` (Facebook Pages / LinkedIn orgs) — CLI / backend mapping
 - Media: `default_image_id`, `default_image_url`, `video_id`, `video_url`, `document_id`, `document_url`
 
 ## Upload

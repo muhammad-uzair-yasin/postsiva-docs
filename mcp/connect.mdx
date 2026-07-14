@@ -62,7 +62,21 @@ claude mcp add --transport http postsiva https://mcp.postsiva.com/mcp \
 1. **Settings → Connectors → Add connector → Add custom connector**
 2. **Name:** `Postsiva`
 3. **URL:** `https://mcp.postsiva.com/web/mcp` — **no** query string, **no** API key
-4. Click **Connect** and complete Postsiva OAuth (pick workspace)
+4. Optional (or leave blank for CIMD) — paste:
+
+   **OAuth Client ID** (`OAUTH_CLAUDE_CLIENT_ID`):
+
+   ```
+   WOX4Pa0RfLt0Xg4_tUEAMqsbLvtKMtE9
+   ```
+
+   **OAuth Client Secret** (`OAUTH_CLAUDE_CLIENT_SECRET`):
+
+   ```
+   2ynPWmCIcklu-BFrt_5TVZ6nToEL9mGPdOJ4kklSSAM
+   ```
+
+5. Click **Connect** and complete Postsiva OAuth (pick workspace)
 
 Full walkthrough: [Claude](/integrations/claude).
 

@@ -42,16 +42,25 @@ Use the **web** MCP URL with **no** API key in the URL or connector fields. Clau
     https://mcp.postsiva.com/web/mcp
     ```
 
-    Leave **OAuth Client ID** / **Client Secret** empty for CIMD, **or** paste your Postsiva Claude credentials from the backend `.env`:
+    Leave **OAuth Client ID** / **Client Secret** empty for CIMD, **or** paste these Postsiva Claude credentials:
 
-    - `OAUTH_CLAUDE_CLIENT_ID`
-    - `OAUTH_CLAUDE_CLIENT_SECRET`
+    **OAuth Client ID** (`OAUTH_CLAUDE_CLIENT_ID`):
+
+    ```
+    WOX4Pa0RfLt0Xg4_tUEAMqsbLvtKMtE9
+    ```
+
+    **OAuth Client Secret** (`OAUTH_CLAUDE_CLIENT_SECRET`):
+
+    ```
+    2ynPWmCIcklu-BFrt_5TVZ6nToEL9mGPdOJ4kklSSAM
+    ```
   </Step>
   <Step title="Connect and authorize">
     Click **Connect**. Sign in to Postsiva, select a workspace, and allow access.
   </Step>
   <Step title="Use in chat">
-    Enable the Postsiva connector in a chat. To post an image/video/document, ask Claude to upload — the iframe widget stores media in Postsiva and returns `media_id` / `public_url` for `publish`.
+    Enable the Postsiva connector in a chat. Upload media via the iframe, then when publishing, use the **publish preview** App (caption + media, account toggles by name, Post / Schedule / Draft / Reject).
   </Step>
 </Steps>
 
